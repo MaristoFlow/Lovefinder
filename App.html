@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Attraction Finder 2.0</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root{
+      --bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    header{text-align:center;padding:22px 16px}
+    header h1{margin:0;font-size:1.6rem}
+    header p{margin:6px 0 0;color:var(--muted)}
+    main{max-width:780px;margin:0 auto;padding:16px;display:grid;gap:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+    .grid{display:grid;gap:10px}
+    .grid.two{grid-template-columns:1fr 1fr}
+    label{font-size:.92rem;color:var(--muted)}
+    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f131b;color:var(--ink)}
+    button{padding:12px 18px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+    button:hover{filter:brightness(.95)}
+    .result{display:none}
+    .result h3{margin-top:0}
+    .score{font-size:1.25rem;font-weight:700}
+    .match-high{color:#90f9c4}
+    .match-med{color:#ffe28a}
+    .match-low{color:#ff9a9a}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.85rem}
+    .small{font-size:.9rem;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Attraction Finder 2.0</h1>
+    <p>Clarity and insight into hidden attraction dynamics</p>
+  </header>
+
+  <main>
+    <!-- Your Profile -->
+    <section class="card">
+      <h2>Your Profile</h2>
+      <div class="grid two">
+        <div>
+          <label>Gender</label>
+          <select id="gender">
+            <option value="">-- Select --</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Age</label>
+          <input id="age" type="number" min="18" max="100">
+        </div>
+      </div>
+      <div class="grid two">
+        <div>
+          <label>Origin</label>
+          <select id="origin">
+            <option value="">-- Select --</option>
+            <option>Asian</option>
+            <option>Black</option>
+            <option>White</option>
+            <option>Latino</option>
+            <option>Middle Eastern</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Background</label>
+          <select id="background">
+            <option value="">-- Select --</option>
+            <option>Upper</option>
+            <option>Middle</option>
+            <option>Lower</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid two">
+        <div>
+          <label>Looking for</label>
+          <select id="looking">
+            <option value="">-- Select --</option>
+            <option>Sex</option>
+            <option>Relationship</option>
+            <option>Both</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:12px">
+        <div><label>Appearance (1–10)</label><input id="appearance" type="number" min="1" max="10"></div>
+        <div><label>Status (1–10)</label><input id="status" type="number" min="1" max="10"></div>
+        <div><label>Confidence (1–10)</label><input id="confidence" type="number" min="1" max="10"></div>
+        <div><label>Empathy (1–10)</label><input id="empathy" type="number" min="1" max="10"></div>
+      </div>
+    </section>
+
+    <!-- Partner Profile -->
+    <section class="card">
+      <h2>Desired Partner</h2>
+      <div class="grid two">
+        <div>
+          <label>Gender</label>
+          <select id="pGender">
+            <option value="">-- Select --</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Age</label>
+          <input id="pAge" type="number" min="18" max="100">
+        </div>
+      </div>
+      <div class="grid two">
+        <div>
+          <label>Origin</label>
+          <select id="pOrigin">
+            <option value="">-- Select --</option>
+            <option>Asian</option>
+            <option>Black</option>
+            <option>White</option>
+            <option>Latino</option>
+            <option>Middle Eastern</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Background</label>
+          <select id="pBackground">
+            <option value="">-- Select --</option>
+            <option>Upper</option>
+            <option>Middle</option>
+            <option>Lower</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid two" style="margin-top:12px">
+        <div><label>Appearance (1–10)</label><input id="pAppearance" type="number" min="1" max="10"></div>
+        <div><label>Status (1–10)</label><input id="pStatus" type="number" min="1" max="10"></div>
+        <div><label>Confidence (1–10)</label><input id="pConfidence" type="number" min="1" max="10"></div>
+        <div><label>Empathy (1–10)</label><input id="pEmpathy" type="number" min="1" max="10"></div>
+      </div>
+    </section>
+
+    <button id="calcBtn">Calculate</button>
+
+    <!-- Results -->
+    <section id="result" class="card result">
+      <h2>Result</h2>
+      <div>
+        <h3>You</h3>
+        <div id="youScore" class="score"></div>
+        <div class="small" id="youMsg"></div>
+        <h3>Desired Partner</h3>
+        <div id="pScore" class="score"></div>
+        <div class="small" id="pMsg"></div>
+        <h3>Match</h3>
+        <div id="matchLevel" class="score"></div>
+        <div class="small" id="alignment"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function num(id){ const v=parseInt(document.getElementById(id).value,10); return isNaN(v)?0:Math.max(0,Math.min(10,v)); }
+    function val(id){ return document.getElementById(id).value.trim(); }
+
+    function applyWeights(profile, other){
+      let {gender, age, origin, background, appearance, status, confidence, empathy} = profile;
+      gender = gender.toLowerCase(); origin = origin.toLowerCase(); background = background.toLowerCase();
+      const a = parseInt(age,10)||0, oa = parseInt(other.age,10)||0, og = (other.gender||"").toLowerCase();
+
+      // ---- Age/Gender rules (Draft B) ----
+      if(gender==="female"){
+        if(a>=18 && a<=25){ appearance+=2; confidence-=2; empathy+=1; }
+        if(a>=26 && a<=35){ appearance-=1; empathy+=2; }
+        if(a>=36 && a<=45){ appearance-=2; empathy+=2; }
+        if(a>=40 && a<=50 && og==="male" && oa>=18 && oa<=25){ appearance+=1; }
+        if(a>=51){ appearance-=2; empathy+=1; }
+        status-=1; // global female status penalty
+        if(a>=60){ status-=2; }
+      }
+      if(gender==="male"){
+        if(a>=25 && a<=35){ appearance+=1; }
+        if(a>=45){ appearance-=1; }
+        if(a>=18 && a<=35){ confidence+=2; }
+        if(a>=50 && a<=60){ status+=1; }
+        if(a>=30 && a<=45){ status+=2; }
+        if(a>=50){ confidence-=1; }
+        if(a>=18 && a<=25){ status-=1; }
+      }
+      if(a>=75){ appearance-=3; status-=3; confidence-=3; } // empathy neutral
+
+      // ---- Origin rules (Draft C) ----
+      if(origin==="asian"){ if(gender==="female"){appearance+=1; empathy+=1;} else if(gender==="male"){status+=1; confidence-=1;} }
+      if(origin==="black"){ if(gender==="male"){appearance+=1; confidence+=2;} else if(gender==="female"){confidence+=1; empathy-=1;} }
+      if(origin==="white"){ if(gender==="female" && a>=30){status+=1;} if(gender==="male" && a>=40){status+=1;} }
+      if(origin==="latino"){ if(gender==="female"){appearance+=1; confidence+=1;} if(gender==="male"){confidence+=1; empathy-=1;} }
+      if(origin==="middle eastern"){ if(gender==="male"){status+=1; empathy-=1;} if(gender==="female"){confidence-=1; empathy+=1;} }
+
+      // ---- Background/Class ----
+      if(background==="upper"){ status+=2; }
+      if(background==="lower"){ status-=2; }
+
+      // Clamp (0–10), empathy uncapped
+      appearance=Math.max(0,Math.min(10,appearance));
+      status=Math.max(0,Math.min(10,status));
+      confidence=Math.max(0,Math.min(10,confidence));
+      empathy=Math.max(0,empathy);
+
+      return {appearance,status,confidence,empathy};
+    }
+
+    function totalScore(s){ return s.appearance+s.status+s.confidence+s.empathy; }
+    function interpret(t){ if(t>=30) return "Very strong profile."; if(t>=20) return "Balanced with room to grow."; return "Weaker profile."; }
+
+    function matchLevel(t1,t2){
+      const gap=Math.abs(t1-t2);
+      if(gap<=4) return {label:"High",cls:"match-high",tip:"Strong alignment."};
+      if(gap<=10) return {label:"Medium",cls:"match-med",tip:"Partial alignment."};
+      return {label:"Low",cls:"match-low",tip:"Significant differences."};
+    }
+
+    document.getElementById("calcBtn").addEventListener("click",()=>{
+      const you={gender:val("gender"),age:val("age"),origin:val("origin"),background:val("background"),
+        appearance:num("appearance"),status:num("status"),confidence:num("confidence"),empathy:num("empathy")};
+      const p={gender:val("pGender"),age:val("pAge"),origin:val("pOrigin"),background:val("pBackground"),
+        appearance:num("pAppearance"),status:num("pStatus"),confidence:num("pConfidence"),empathy:num("pEmpathy")};
+
+      const youAdj=applyWeights(you,p); const pAdj=applyWeights(p,you);
+      const youTotal=totalScore(youAdj), pTotal=totalScore(pAdj);
+
+      document.getElementById("youScore").textContent="Your Score: "+youTotal.toFixed(1)+"/40";
+      document.getElementById("youMsg").textContent=interpret(youTotal);
+      document.getElementById("pScore").textContent="Partner Score: "+pTotal.toFixed(1)+"/40";
+      document.getElementById("pMsg").textContent=interpret(pTotal);
+
+      const m=matchLevel(youTotal,pTotal);
+      const node=document.getElementById("matchLevel");
+      node.textContent="Match: "+m.label; node.className="score "+m.cls;
+      document.getElementById("alignment").textContent=m.tip;
+
+      document.getElementById("result").style.display="block";
+      window.scrollTo({top:document.getElementById("result").offsetTop-10,behavior:"smooth"});
+    });
+  </script>
+</body>
+</html>
