@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attraction Finder 2.2</title>
+  <title>Attraction Finder 2.3</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     :root{--bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838}
@@ -33,7 +33,7 @@
 </head>
 <body>
   <header>
-    <h1>Attraction Finder 2.2</h1>
+    <h1>Attraction Finder 2.3</h1>
     <p>Clarity and insight into hidden attraction dynamics</p>
   </header>
 
@@ -198,252 +198,123 @@
   </main>
 
   <script>
-    // Populate stat dropdowns with 1..10
+    // Populate 1–10 dropdowns
     function fill10(id){
       const el=document.getElementById(id);
       el.innerHTML = '<option value="">--</option>' + Array.from({length:10},(_,i)=>`<option>${i+1}</option>`).join('');
     }
     ["appearance","status","confidence","empathy","pAppearance","pStatus","pConfidence","pEmpathy"].forEach(fill10);
 
-    // Helpers
-    const v = id => document.getElementById(id).value.trim();
-    const n = id => { const s=v(id); const x=parseInt(s,10); return isNaN(x)?0:Math.max(1,Math.min(10,x)); };
-    const clamp01 = x => Math.max(0, Math.min(10, x));
+    const v=id=>document.getElementById(id).value.trim();
+    const n=id=>{const s=v(id);const x=parseInt(s,10);return isNaN(x)?0:Math.max(1,Math.min(10,x));};
+    const clamp01=x=>Math.max(0,Math.min(10,x));
 
-    // Lifestyle Origin (two options)
-    function applyLifestyleOrigin(origin, traits){
+    function applyLifestyleOrigin(origin,traits){
       const o=(origin||"").toLowerCase();
       let {appearance,status,confidence,empathy}=traits;
-      if(o==="career-oriented"){ status+=2; empathy-=1; }
-      else if(o==="family-oriented"){ empathy+=2; status-=1; }
+      if(o==="career-oriented"){status+=2;empathy-=1;}
+      else if(o==="family-oriented"){empathy+=2;status-=1;}
       return {appearance,status,confidence,empathy};
     }
 
-    // Individual weights: age, gender, class + empathy 65+, 75+ penalties
-    function individualAdjust(raw, other){
-      let { gender, age, background, origin } = raw;
-      let { appearance, status, confidence, empathy } = raw;
-
+    function individualAdjust(raw,other){
+      let {gender,age,background,origin}=raw;
+      let {appearance,status,confidence,empathy}=raw;
       gender=(gender||"").toLowerCase();
       background=(background||"").toLowerCase();
       const a=parseInt(raw.age,10)||0;
       const oa=parseInt(other.age,10)||0;
       const og=(other.gender||"").toLowerCase();
-
-      // Female
       if(gender==="female"){
-        if(a>=18 && a<=25){ appearance+=2; confidence-=2; empathy+=1; }
-        if(a>=26 && a<=35){ appearance-=1; empathy+=2; }
-        if(a>=36 && a<=45){ appearance-=2; empathy+=2; }
-        if(a>=40 && a<=50 && og==="male" && oa>=18 && oa<=25){ appearance+=1; }
-        if(a>=51){ appearance-=2; empathy+=1; }
-        status -= 1;
-        if(a>=60){ status -= 2; }
+        if(a>=18&&a<=25){appearance+=2;confidence-=2;empathy+=1;}
+        if(a>=26&&a<=35){appearance-=1;empathy+=2;}
+        if(a>=36&&a<=45){appearance-=2;empathy+=2;}
+        if(a>=40&&a<=50&&og==="male"&&oa>=18&&oa<=25){appearance+=1;}
+        if(a>=51){appearance-=2;empathy+=1;}
+        status-=1;if(a>=60){status-=2;}
       }
-
-      // Male
       if(gender==="male"){
-        if(a>=25 && a<=35){ appearance+=1; }
-        if(a>=45){ appearance-=1; }
-        if(a>=18 && a<=35){ confidence+=2; }
-        if(a>=50){ confidence-=1; }
-        if(a>=30 && a<=45){ status+=2; }
-        if(a>=50 && a<=60){ status+=1; }
-        if(a>=18 && a<=25){ status-=1; }
+        if(a>=25&&a<=35){appearance+=1;}
+        if(a>=45){appearance-=1;}
+        if(a>=18&&a<=35){confidence+=2;}
+        if(a>=50){confidence-=1;}
+        if(a>=30&&a<=45){status+=2;}
+        if(a>=50&&a<=60){status+=1;}
+        if(a>=18&&a<=25){status-=1;}
       }
-
-      if(a>=65){ empathy+=2; }
-      if(a>=75){ appearance-=3; status-=3; confidence-=3; }
-
-      if(background==="upper"){ status+=2; }
-      else if(background==="lower"){ status-=2; }
-
+      if(a>=65){empathy+=2;}
+      if(a>=75){appearance-=3;status-=3;confidence-=3;}
+      if(background==="upper"){status+=2;}
+      else if(background==="lower"){status-=2;}
       ({appearance,status,confidence,empathy}=applyLifestyleOrigin(origin,{appearance,status,confidence,empathy}));
-
-      appearance=clamp01(appearance);
-      status=clamp01(status);
-      confidence=clamp01(confidence);
-      empathy=Math.max(0,empathy);
-
-      return {appearance,status,confidence,empathy};
+      return {appearance:clamp01(appearance),status:clamp01(status),confidence:clamp01(confidence),empathy:Math.max(0,empathy)};
     }
 
-    function totalScore(s){ return s.appearance+s.status+s.confidence+s.empathy; }
+    function totalScore(s){return s.appearance+s.status+s.confidence+s.empathy;}
+    function ageGapPenalty(ya,pa){const g=Math.abs(ya-pa);if(g>=25)return 10;if(g>=20)return 7;if(g>=15)return 4;if(g>=10)return 2;return 0;}
 
-    function ageGapPenalty(ya,pa){
-      const g=Math.abs(ya-pa);
-      if(g>=25) return 10;
-      if(g>=20) return 7;
-      if(g>=15) return 4;
-      if(g>=10) return 2;
-      return 0;
-    }
-
-    // Compatibility: background (sex-mode novelty vs relationship homogamy), lifestyle origin match, children logic, cross-age dynamics, relationship bonuses, age-gap
     function compatibilityModifier(you,partner){
       let mod=0;
-
-      const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
-      const yl=(you.looking||"").toLowerCase(), pl=(partner.looking||"").toLowerCase();
-      const sexMode = (yl==="sex" || pl==="sex") && !(yl==="relationship" && pl==="relationship");
-
-      // Children fields
-      const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
-      const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
-
-      const bothRel=(yl==="relationship") && (pl==="relationship");
-
-      // ---- Children rules ----
+      const yb=(you.background||"").toLowerCase(),pb=(partner.background||"").toLowerCase();
+      const yl=(you.looking||"").toLowerCase(),pl=(partner.looking||"").toLowerCase();
+      const sexMode=(yl==="sex"||pl==="sex")&&!(yl==="relationship"&&pl==="relationship");
+      const yK=(you.kids||"").toLowerCase(),pK=(partner.kids||"").toLowerCase();
+      const yW=(you.wantKids||"").toLowerCase(),pW=(partner.wantKids||"").toLowerCase();
+      const bothRel=(yl==="relationship")&&(pl==="relationship");
       if(bothRel){
-        // Wants-kids clash
-        if((yW==="yes" && pW==="no") || (yW==="no" && pW==="yes")) mod += 6;
-        else if((yW==="yes" && pW==="later") || (yW==="later" && pW==="yes")) mod += 3;
-        // alignment bonus
-        if((yW==="yes" && pW==="yes") || (yW==="no" && pW==="no")) mod -= 2;
-
-        // lifestyle load mismatch
-        if((yK==="full-time custody" && pK==="none") || (pK==="full-time custody" && yK==="none")) mod += 2;
-        if(yK!=="none" && pK!=="none") mod -= 1;
+        if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes"))mod+=6;
+        else if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes"))mod+=3;
+        if((yW==="yes"&&pW==="yes")||(yW==="no"&&pW==="no"))mod-=2;
+        if((yK==="full-time custody"&&pK==="none")||(pK==="full-time custody"&&yK==="none"))mod+=2;
+        if(yK!=="none"&&pK!=="none")mod-=1;
       }
-
-      // Background
-      if(yb && pb){
+      if(yb&&pb){
         if(sexMode){
-          // Sex-mode novelty, but turn off if full-time custody makes logistics hard
-          const hasFullTime = (yK==="full-time custody" || pK==="full-time custody");
-          if(yb !== pb && !hasFullTime){
-            const bothSex = (yl==="sex" && pl==="sex");
-            mod -= bothSex ? 3 : 2;
-          }
+          const hasFullTime=(yK==="full-time custody"||pK==="full-time custody");
+          if(yb!==pb&&!hasFullTime){const bothSex=(yl==="sex"&&pl==="sex");mod-=bothSex?3:2;}
         }else{
-          // Relationship mode: homogamy preferred
-          if(yb===pb){
-            if(yb==="upper") mod -= 2;
-            else if(yb==="middle") mod -= 1;
-          }else{
-            if(yb==="lower" && pb==="upper") mod += 3;
-            if(yb==="upper" && pb==="lower") mod += 2;
-            if(yb==="middle" && (pb==="upper"||pb==="lower")) mod += 1;
+          if(yb===pb){if(yb==="upper")mod-=2;else if(yb==="middle")mod-=1;}
+          else{
+            if(yb==="lower"&&pb==="upper")mod+=3;
+            if(yb==="upper"&&pb==="lower")mod+=2;
+            if(yb==="middle"&&(pb==="upper"||pb==="lower"))mod+=1;
           }
         }
       }
-
-      // Lifestyle Origin alignment: same = strong bonus
-      const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
-      if(yo && po && yo===po){ mod -= 3; }
-
-      // Cross dynamics (age/gender perceived mismatches)
-      const yg=(you.gender||"").toLowerCase(), pg=(partner.gender||"").toLowerCase();
-      const ya=parseInt(you.age,10)||0,        pa=parseInt(partner.age,10)||0;
-
-      if(yg==="male"&&ya>=30&&ya<=40&&pg==="female"&&pa>=20&&pa<=25) mod+=2;
-      if(yg==="female"&&ya>=35&&ya<=45&&pg==="male"&&pa>=18&&pa<=25) mod+=2;
-      if(yg==="male"&&ya>=18&&ya<=25&&pg==="female"&&pa>=30&&pa<=35) mod+=2;
-      if(pg==="male"&&pa>=18&&pa<=25&&yg==="female"&&ya>=30&&ya<=35) mod+=2;
-
-      // Relationship alignment bonuses (both must choose Relationship)
-      if(bothRel){
-        if(Math.abs(ya-pa)<=7) mod -= 2;
-        if(ya>=35&&ya<=50&&pa>=35&&pa<=50) mod -= 2;
-      }
-
-      // Universal age-gap penalty + directional penalties
-      mod += ageGapPenalty(ya,pa);
-      if(yg==="male" && ya - pa >= 15 && pa < 35) mod += 6;
-      if(yg==="female" && ya - pa >= 12 && pa < 30) mod += 5;
-
+      const yo=(you.origin||"").toLowerCase(),po=(partner.origin||"").toLowerCase();
+      if(yo&&po&&yo===po)mod-=3;
+      const yg=(you.gender||"").toLowerCase(),pg=(partner.gender||"").toLowerCase();
+      const ya=parseInt(you.age,10)||0,pa=parseInt(partner.age,10)||0;
+      if(yg==="male"&&ya>=30&&ya<=40&&pg==="female"&&pa>=20&&pa<=25)mod+=2;
+      if(yg==="female"&&ya>=35&&ya<=45&&pg==="male"&&pa>=18&&pa<=25)mod+=2;
+      if(yg==="male"&&ya>=18&&ya<=25&&pg==="female"&&pa>=30&&pa<=35)mod+=2;
+      if(pg==="male"&&pa>=18&&pa<=25&&yg==="female"&&ya>=30&&ya<=35)mod+=2;
+      if(bothRel){if(Math.abs(ya-pa)<=7)mod-=2;if(ya>=35&&ya<=50&&pa>=35&&pa<=50)mod-=2;}
+      mod+=ageGapPenalty(ya,pa);
+      if(yg==="male"&&ya-pa>=15&&pa<35)mod+=6;
+      if(yg==="female"&&ya-pa>=12&&pa<30)mod+=5;
       return mod;
     }
 
-    // Messages for stages
-    const msgs = {
-      matched: [
-        "Aligned values, timing, and energy. Green light.",
-        "Strong fit. Lean in and keep momentum.",
-        "Great match. Focus on connection, not perfection."
-      ],
-      realistic: [
-        "Workable match with some differences to navigate.",
-        "Promising if you communicate clearly about expectations.",
-        "Realistic path: set boundaries and grow together."
-      ],
-      challenged: [
-        "Realistic with a major challenge. Pick your battles.",
-        "One big friction point stands out. Address it early.",
-        "Potential exists, but stability may be shaky without effort."
-      ],
-      unlikely: [
-        "Unlikely — different worlds around confidence/status or family plans.",
-        "Low odds: standards or children goals don’t align.",
-        "Attraction exists, but priorities and logistics are out of sync."
-      ],
-      unrealistic: [
-        "This match is unlikely under current dynamics.",
-        "Compatibility is very low; major change would be needed.",
-        "Gaps are wide — consider recalibration or a different target."
-      ]
+    const msgs={
+      matched:["Aligned values, timing, and energy. Green light.","Strong fit. Lean in and keep momentum.","Great match. Focus on connection, not perfection."],
+      realistic:["Workable match with some differences to navigate.","Promising if you communicate clearly about expectations.","Realistic path: set boundaries and grow together."],
+      challenged:["Realistic with a major challenge. Pick your battles.","One big friction point stands out. Address it early.","Potential exists, but stability may be shaky without effort."],
+      unlikely:["Unlikely — different worlds around confidence/status or family plans.","Low odds: standards or children goals don’t align.","Attraction exists, but priorities and logistics are out of sync."],
+      unrealistic:["This match is unlikely under current dynamics.","Compatibility is very low; major change would be needed.","Gaps are wide — consider recalibration or a different target."]
     };
+    function choose(arr){return arr[Math.floor(Math.random()*arr.length)];}
 
-    function choose(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-    // Determine label from effective gap + context
-    function bandFromGapAndOverrule(you, partner, effGap){
-      const ya=parseInt(you.age,10)||0, pa=parseInt(partner.age,10)||0;
+    function bandFromGapAndOverrule(you,partner,effGap){
+      const ya=parseInt(you.age,10)||0,pa=parseInt(partner.age,10)||0;
       const hardGap=Math.abs(ya-pa);
-
-      // 20+ age gap = auto Unrealistic
-      if(hardGap>=20) return {key:"unrealistic", label:"Unrealistic", cls:"match-low", tip:"Age gap over 20 years."};
-
-      const yl=(you.looking||"").toLowerCase(), pl=(partner.looking||"").toLowerCase();
+      if(hardGap>=20)return{key:"unrealistic",label:"Unrealistic",cls:"match-low",tip:"Age gap over 20 years."};
+      const yl=(you.looking||"").toLowerCase(),pl=(partner.looking||"").toLowerCase();
       const bothRel=(yl==="relationship")&&(pl==="relationship");
-      const backgroundMismatch=(you.background||"").toLowerCase() !== (partner.background||"").toLowerCase();
-      const lifestyleMismatch=(you.origin||"").toLowerCase() !== (partner.origin||"").toLowerCase();
-
-      // Children flags
-      const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
-      const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
-      const sexMode = (yl==="sex" || pl==="sex") && !bothRel;
-      const kidsClash =
-        (bothRel && ((yW==="yes" && pW==="no") || (yW==="no" && pW==="yes") || (yW==="yes" && pW==="later") || (yW==="later" && pW==="yes"))) ||
-        (sexMode && (yK==="full-time custody" || pK==="full-time custody"));
-
-      // Special heuristic: F18–20 high A vs low-confidence/status male → Unlikely
-      const youMale   = (you.gender||"").toLowerCase()==="male";
-      const partnerF  = (partner.gender||"").toLowerCase()==="female";
-      const fIs19HiA  = partnerF && pa>=18 && pa<=20 && (partner.appearance>=8);
-      const confGap   = (partner.confidence||0) - (you.confidence||0);
-      const statGap   = (partner.status||0) - (you.status||0);
-      const bgUpJump  = (you.background||"").toLowerCase()==="lower" && (partner.background||"").toLowerCase()==="upper";
-      const unlikelyYoungHighA =
-        youMale && fIs19HiA && (you.confidence<=6 || confGap>=3 || statGap>=4 || bgUpJump);
-
-      if(effGap <= 4)
-        return {key:"matched", label:"Matched", cls:"match-high", tip:"Strong overall alignment."};
-
-      if(effGap <= 10){
-        if(unlikelyYoungHighA || kidsClash)
-          return {key:"unlikely", label:"Unlikely", cls:"match-warn", tip:"Key priorities/standards don’t align."};
-
-        if(bothRel && (backgroundMismatch || lifestyleMismatch))
-          return {key:"challenged", label:"Challenged", cls:"match-warn", tip:"Realistic with a major challenge."};
-
-        return {key:"realistic", label:"Realistic", cls:"match-med", tip:"Partial alignment; workable with effort."};
-      }
-
-      return {key:"unrealistic", label:"Unrealistic", cls:"match-low", tip:"Gaps are too large right now."};
-    }
-
-    // Biggest gaps (names only)
-    function biggestGapNames(a,b){
-      return [["Appearance",a.appearance,b.appearance],["Status",a.status,b.status],["Confidence",a.confidence,b.confidence],["Empathy",a.empathy,b.empathy]]
-        .map(([k,x,y])=>({k,gap:Math.abs(x-y)})).sort((u,v)=>v.gap-u.gap).slice(0,2).map(d=>d.k);
-    }
-
-    document.getElementById("calcBtn").addEventListener("click",()=>{
-      const you={
-        gender:v("gender"), age:v("age"), background:v("background"), origin:v("origin"), looking:v("looking"),
-        kids:v("kids"), wantKids:v("wantKids"),
-        appearance:n("appearance"), status:n("status"), confidence:n("confidence"), empathy:n("empathy")
-      };
-      const p={
-        gender:v("pGender"), age:v("pAge"), background:v("p
+      const backgroundMismatch=(you.background||"").toLowerCase()!==(partner.background||"").toLowerCase();
+      const lifestyleMismatch=(you.origin||"").toLowerCase()!==(partner.origin||"").toLowerCase();
+      const yK=(you.kids||"").toLowerCase(),pK=(partner.kids||"").toLowerCase();
+      const yW=(you.wantKids||"").toLowerCase(),pW=(partner.wantKids||"").toLowerCase();
+      const sexMode=(yl==="sex"||pl==="sex")&&!bothRel;
+      const kidsClash=(bothRel&&((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")||(yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")))||(sexMode&&(yK==="full-time custody"||pK==="full-time custody"));
+      const youMale=(you.gender||"").toLowerCase()==="male",partnerF=(partner.gender||"
