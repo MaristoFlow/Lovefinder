@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attraction Finder — v2.5 (Single-File MVP)</title>
+  <title>Attraction Finder — v2.6 (Lean MVP)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Attraction Finder — A,S,E,C model with asymmetric age effects, intent re-weighting, and mutual score.">
+  <meta name="description" content="Attraction Finder — A,S,E,C model with asymmetric age effects and mutual score (Love intent).">
   <style>
     :root{
       --bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838;
@@ -25,12 +25,8 @@
     select,input[type="number"]{
       width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f131b;color:var(--ink)
     }
-    .row{display:flex;gap:10px;align-items:center}
-    .row > *{flex:1}
-    .controls{display:flex;gap:10px;flex-wrap:wrap}
-    button{
-      padding:12px 16px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer
-    }
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{padding:12px 16px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
     button.secondary{background:#0f131b;border:1px solid var(--line);color:var(--ink);font-weight:600}
     button:hover{filter:brightness(.95)}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.85rem;margin:6px 8px 10px 0}
@@ -50,8 +46,8 @@
 </head>
 <body>
   <header>
-    <h1>Attraction Finder — v2.5</h1>
-    <p>A,S,E,C + asymmetric age & intent • Mutual likelihood with clear explanations</p>
+    <h1>Attraction Finder — v2.6</h1>
+    <p>A,S,E,C + asymmetric age (Love intent) • Mutual likelihood with clear drivers</p>
   </header>
 
   <main>
@@ -113,14 +109,6 @@
             <option>Later</option>
           </select>
         </div>
-      </div>
-
-      <div>
-        <label for="looking">Looking for</label>
-        <select id="looking">
-          <option>Relationship</option>
-          <option>Sex</option>
-        </select>
       </div>
 
       <div class="grid two" style="margin-top:12px">
@@ -197,33 +185,9 @@
         <div><label for="pConfidence">Confidence</label><select id="pConfidence"></select></div>
         <div><label for="pEmpathy">Empathy</label><select id="pEmpathy"></select></div>
       </div>
-    </section>
 
-    <!-- PREFERENCES / CONTROLS -->
-    <section class="card">
-      <h2 class="section-title">Preferences & Controls</h2>
-      <div class="grid two">
-        <div>
-          <label for="intent">Intent</label>
-          <select id="intent">
-            <option>Both</option>
-            <option selected>Love</option>
-            <option>Sex</option>
-          </select>
-        </div>
-        <div class="row">
-          <div>
-            <label for="minAge">Target min age (filter)</label>
-            <input id="minAge" type="number" min="18" max="100" placeholder="18">
-          </div>
-          <div>
-            <label for="maxAge">Target max age (filter)</label>
-            <input id="maxAge" type="number" min="18" max="100" placeholder="45">
-          </div>
-        </div>
-      </div>
-
-      <div class="controls" style="margin-top:10px">
+      <!-- Controls moved here -->
+      <div class="controls">
         <button id="calcBtn">Calculate</button>
         <button id="reportBtn" class="secondary" disabled>Download report</button>
         <button id="resetBtn" class="secondary">Reset</button>
@@ -252,20 +216,13 @@
             <div class="small" id="rightLine"></div>
             <ul id="rightTop" class="small" style="margin:6px 0 0 18px"></ul>
           </div>
-          <div class="box small">
-            <strong>Notes</strong>
-            <div>
-              Labels: Likely ≥70, Good chance 60–69, Maybe 45–59, Unlikely &lt;45.
-              Intent re-weights traits; age has directional effects; context modifiers consider kids & plans, background, origin.
-            </div>
-          </div>
         </div>
       </div>
     </section>
   </main>
 
   <footer>
-    v2.5 — Weights & age logic are placeholders for discussion. Tweak in source.
+    v2.6 — Love intent only. Weights & age logic are placeholders for discussion.
   </footer>
 
   <script>
@@ -280,23 +237,19 @@
   function num(id,min=1,max=10){const s=val(id);const x=parseInt(s,10);if(isNaN(x))return 0;return Math.max(min,Math.min(max,x));}
   function clamp(n,a,b){return Math.min(b,Math.max(a,n));}
 
-  // ----- model -----
+  // ----- model (Love intent fixed) -----
   const WEIGHTS = {
     "Female": { appearance:0.23, status:0.38, empathy:0.12, confidence:0.27 },
     "Male":   { appearance:0.46, status:0.12, empathy:0.22, confidence:0.20 },
     "Other/Unspecified": { appearance:0.30, status:0.25, empathy:0.25, confidence:0.20 }
   };
-  const INTENT_DELTA = {
-    "Love": { empathy:+0.06, status:+0.02, appearance:-0.04, confidence:-0.04 },
-    "Sex":  { appearance:+0.08, confidence:+0.04, empathy:-0.08, status:-0.04 }
-  };
+  const INTENT_DELTA = { "Love": { empathy:+0.06, status:+0.02, appearance:-0.04, confidence:-0.04 } };
   const TRAIT_LABELS = { appearance:"Appearance", status:"Status", empathy:"Empathy", confidence:"Confidence" };
 
-  function mixWeights(base, intent){
-    if(intent==="Both") return {...base};
-    const delta = INTENT_DELTA[intent];
+  function mixWeights(base){ // Love-only
+    const delta = INTENT_DELTA["Love"];
     const mixed = {...base};
-    for(const k of Object.keys(delta)){ mixed[k] = Math.max(0.05, (mixed[k]??0)+delta[k]); }
+    for(const k of Object.keys(delta)){ mixed[k] = Math.max(0.05,(mixed[k]??0)+delta[k]); }
     const sum = Object.values(mixed).reduce((a,b)=>a+b,0);
     for(const k of Object.keys(mixed)){ mixed[k] = mixed[k]/sum; }
     return mixed;
@@ -334,17 +287,17 @@
     return 1.0 - (1.0 - mult)*opener;
   }
 
-  function sideFit(evaluator, target, intent){
-    const w = mixWeights(WEIGHTS[evaluator.gender], intent);
+  function sideFit(evaluator, target){
+    const w = mixWeights(WEIGHTS[evaluator.gender]);
     const utility = traitUtility(target, w);
     const ageBase = baseAgeCurve(target.age);
     const dir = directionalGapMultiplier(evaluator.gender, evaluator.age, target.age, utility*10);
     return { fit: clamp(utility*ageBase*dir,0,1), utility, ageBase, dir, weights:w };
   }
 
-  function mutualMatch(a,b,intent){
-    const left = sideFit(a,b,intent);
-    const right= sideFit(b,a,intent);
+  function mutualMatch(a,b){
+    const left = sideFit(a,b);
+    const right= sideFit(b,a);
     const score = Math.round(Math.sqrt(left.fit*right.fit)*100);
     return { score, left, right };
   }
@@ -356,20 +309,18 @@
     return {label:"Unlikely", cls:"match-low"};
   }
 
-  // ----- context modifiers -----
-  function contextModifier(you, partner, bothRelationship){
+  // ----- context (kept, compact) -----
+  function contextModifier(you, partner){
     let mod=0;
     const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
     const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
-    if(bothRelationship){
-      if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
-      if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
-      if(yK==="full-time custody" && pK==="none") mod+=2;
-      if(pK==="full-time custody" && yK==="none") mod+=2;
-      if(yK!=="none" && pK!=="none") mod-=1;
-    } else {
-      if(yK==="full-time custody"||pK==="full-time custody") mod+=2;
-    }
+    // Love-only logic:
+    if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
+    if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
+    if(yK==="full-time custody" && pK==="none") mod+=2;
+    if(pK==="full-time custody" && yK==="none") mod+=2;
+    if(yK!=="none" && pK!=="none") mod-=1;
+
     const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
     if(yb && pb){
       if(yb===pb){ mod -= (yb==="upper"?2: yb==="middle"?1:0); }
@@ -377,15 +328,14 @@
     }
     const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
     if(yo && po){ mod += (yo===po? -1 : 1); }
+
     const gap=Math.abs(you.age-partner.age);
     if(gap>=20) mod+=6; else if(gap>=15) mod+=3; else if(gap>=10) mod+=1;
     return mod;
   }
 
-  function applyContext(score, you, partner, intent){
-    const bothRelationship = (intent==="Love"||intent==="Both") &&
-                             (you.looking==="Relationship" && partner.looking==="Relationship");
-    const mod = contextModifier(you, partner, bothRelationship);
+  function applyContext(score, you, partner){
+    const mod = contextModifier(you, partner);
     const damp = Math.max(0.6, 1 - mod*0.02);
     return Math.round(score*damp);
   }
@@ -412,20 +362,7 @@
         status:     num("status")||5,
         empathy:    num("empathy")||5,
         confidence: num("confidence")||5,
-      }
-    };
-  }
-
-  function readMeta(prefix){
-    if(prefix==="p"){
-      return {
-        background: val("pBackground") || "",
-        origin:     val("pOrigin") || "",
-        kids:       val("pKids") || "None",
-        wantKids:   val("pWantKids") || "Maybe",
-      };
-    }
-    return {
+      },
       background: val("background") || "",
       origin:     val("origin") || "",
       kids:       val("kids") || "None",
@@ -433,20 +370,13 @@
     };
   }
 
-  function readAll(){
-    const me   = readPerson("");
-    const them = readPerson("p");
-    Object.assign(me,   readMeta(""));
-    Object.assign(them, readMeta("p"));
-
-    const intent = val("intent") || "Both";
-    const filter = {
-      minAge: parseInt(val("minAge"),10) || 18,
-      maxAge: parseInt(val("maxAge"),10) || 100,
+  function readPartnerMeta(){
+    return {
+      background: val("pBackground") || "",
+      origin:     val("pOrigin") || "",
+      kids:       val("pKids") || "None",
+      wantKids:   val("pWantKids") || "Maybe",
     };
-    me.looking = (val("looking")==="Sex" ? "Sex" : "Relationship");
-    them.looking = "Relationship";
-    return { me, them, intent, filter };
   }
 
   // ----- explain -----
@@ -455,12 +385,12 @@
       .sort((a,b)=>b.w-a.w).slice(0,3);
   }
 
-  function makeReport({me, them, intent, res, finalScore, label}){
+  function makeReport({me, them, res, finalScore, label}){
     const {left,right,score}=res;
     const lines = [
       "Attraction Finder — personal result",
       "Date: "+new Date().toISOString(),
-      "Intent: "+intent,
+      "Intent: Love",
       "",
       `You (${me.gender}, ${me.age}) vs Them (${them.gender}, ${them.age})`,
       `Mutual Match Score (raw): ${score}`,
@@ -470,12 +400,7 @@
       `Their view of you: ${(right.fit*100).toFixed(1)} | utility ${(right.utility*100).toFixed(1)} | age ${(right.ageBase*100).toFixed(0)}% | gap ${(right.dir*100).toFixed(0)}%`,
       "",
       "Trait weights (you evaluating): "+JSON.stringify(left.weights),
-      "Trait weights (them evaluating): "+JSON.stringify(right.weights),
-      "",
-      "Notes:",
-      "— Labels: Likely ≥70, Good chance 60–69, Maybe 45–59, Unlikely <45",
-      "— Door-opener may reduce age penalties when target utility ≥9",
-      "— Context considers children & plans, background, origin, and large age gaps."
+      "Trait weights (them evaluating): "+JSON.stringify(right.weights)
     ];
     return lines.join("\n");
   }
@@ -503,17 +428,15 @@
   });
 
   calcBtn.addEventListener("click", ()=>{
-    const { me, them, intent, filter } = readAll();
+    const me   = readPerson("");
+    const them = { ...readPerson("p"), ...readPartnerMeta() };
 
     if(!(me.age>=18 && me.age<=100) || !(them.age>=18 && them.age<=100)){
       alert("Ages must be 18–100."); return;
     }
-    if(them.age<filter.minAge || them.age>filter.maxAge){
-      alert("Desired partner outside your filter window. Adjust min/max target age."); return;
-    }
 
-    const res = mutualMatch(me, them, intent);
-    let finalScore = applyContext(res.score, me, them, intent);
+    const res = mutualMatch(me, them);
+    let finalScore = applyContext(res.score, me, them);
     finalScore = clamp(finalScore, 0, 100);
     const {label, cls} = labelFromScore(finalScore);
 
@@ -527,12 +450,10 @@
     matchEl.textContent = `${finalScore} / 100`;
     document.getElementById("labelText").textContent = label;
 
-    const tips = {
-      high: ["Strong fit. Keep momentum and communicate clearly.","Green light. Focus on connection, not perfection."],
-      med:  ["Workable match with differences to navigate.","Promising if expectations are aligned early."],
-      low:  ["Low odds under current dynamics. Consider recalibration.","Gap areas are wide — small experiments over big bets."]
-    };
-    const tipPool = finalScore>=70?tips.high: finalScore>=50?tips.med: tips.low;
+    const tipsHigh=["Strong fit. Keep momentum and communicate clearly.","Green light. Focus on connection, not perfection."];
+    const tipsMed =["Workable match with differences to navigate.","Promising if expectations are aligned early."];
+    const tipsLow =["Low odds under current dynamics. Consider recalibration.","Gaps are wide — try small experiments first."];
+    const tipPool = finalScore>=70?tipsHigh: finalScore>=50?tipsMed: tipsLow;
     document.getElementById("randMessage").textContent = tipPool[Math.floor(Math.random()*tipPool.length)];
 
     const L = res.left, R = res.right;
@@ -550,7 +471,7 @@
 
     document.getElementById("result").hidden = false;
 
-    lastReport = makeReport({me, them, intent, res, finalScore, label});
+    lastReport = makeReport({me, them, res, finalScore, label});
     reportBtn.disabled = false;
   });
 
@@ -567,7 +488,6 @@
     document.getElementById("origin").value = "Career-Oriented";
     document.getElementById("kids").value = "None";
     document.getElementById("wantKids").value = "Maybe";
-    document.getElementById("looking").value = "Relationship";
     document.getElementById("appearance").value = "6";
     document.getElementById("status").value = "5";
     document.getElementById("empathy").value = "5";
@@ -583,10 +503,6 @@
     document.getElementById("pStatus").value = "6";
     document.getElementById("pEmpathy").value = "6";
     document.getElementById("pConfidence").value = "6";
-
-    document.getElementById("intent").value = "Love"; // as requested
-    document.getElementById("minAge").value = "18";
-    document.getElementById("maxAge").value = "45";
   })();
   </script>
 </body>
