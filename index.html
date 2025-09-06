@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attraction Finder — v2.6 (Lean MVP)</title>
+  <title>Attraction Finder — v2.7 (Lean & Human)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Attraction Finder — A,S,E,C model with asymmetric age effects and mutual score (Love intent).">
+  <meta name="description" content="Attraction Finder — Love-focused A,S,E,C model with asymmetric age effects and human-readable results.">
   <style>
     :root{
       --bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838;
-      --good:#7dffbc;--mid:#a7c7ff;--warn:#ffbc7a;--low:#ff9a9a
+      --good:#7dffbc;--mid:#ffe28a;--warn:#ffbc7a;--low:#ff9a9a
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -32,22 +32,22 @@
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.85rem;margin:6px 8px 10px 0}
     .small{font-size:.95rem;color:var(--muted)}
     .score{font-size:2.2rem;font-weight:900;letter-spacing:.5px}
-    .match-high{color:var(--good)}
-    .match-med{color:#ffe28a}
-    .match-warn{color:var(--warn)}
-    .match-low{color:var(--low)}
+    .match-likely{color:var(--good)}
+    .match-match{color:var(--mid)}
+    .match-chal{color:var(--warn)}
+    .match-unre{color:var(--low)}
     hr{border:0;border-top:1px solid var(--line);margin:14px 0}
     .section-title{margin:.2rem 0 .6rem 0}
     .explain{display:grid;gap:10px}
-    .box{background:#0f131b;border:1px solid var(--line);border-radius:12px;padding:10px}
+    .blurb{background:#0f131b;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.4}
     footer{max-width:960px;margin:0 auto;padding:18px 16px;color:var(--muted);text-align:center;font-size:.9rem}
     :focus{outline:2px solid #81a7ff;outline-offset:2px}
   </style>
 </head>
 <body>
   <header>
-    <h1>Attraction Finder — v2.6</h1>
-    <p>A,S,E,C + asymmetric age (Love intent) • Mutual likelihood with clear drivers</p>
+    <h1>Attraction Finder — v2.7</h1>
+    <p>Love-focused predictor with simple, human feedback</p>
   </header>
 
   <main>
@@ -186,7 +186,7 @@
         <div><label for="pEmpathy">Empathy</label><select id="pEmpathy"></select></div>
       </div>
 
-      <!-- Controls moved here -->
+      <!-- Controls -->
       <div class="controls">
         <button id="calcBtn">Calculate</button>
         <button id="reportBtn" class="secondary" disabled>Download report</button>
@@ -203,50 +203,38 @@
         <hr>
         <div id="matchLevel" class="score"></div>
         <div class="small" id="labelText" style="margin-top:4px"></div>
-        <div class="small" id="randMessage" style="margin-top:6px"></div>
         <hr>
-        <div class="explain">
-          <div class="box">
-            <strong>From your perspective</strong>
-            <div class="small" id="leftLine"></div>
-            <ul id="leftTop" class="small" style="margin:6px 0 0 18px"></ul>
-          </div>
-          <div class="box">
-            <strong>From their perspective</strong>
-            <div class="small" id="rightLine"></div>
-            <ul id="rightTop" class="small" style="margin:6px 0 0 18px"></ul>
-          </div>
-        </div>
+        <div id="humanCopy" class="blurb"></div>
+        <div id="humanCopy2" class="blurb" style="margin-top:8px"></div>
       </div>
     </section>
   </main>
 
   <footer>
-    v2.6 — Love intent only. Weights & age logic are placeholders for discussion.
+    v2.7 — Love intent only. Human-first language with randomized copy per band.
   </footer>
 
   <script>
-  // ----- helpers -----
+  // ---------- helpers ----------
   function fill10(id){
     const el=document.getElementById(id);
     el.innerHTML = '<option value="">--</option>' + Array.from({length:10},(_,i)=>`<option>${i+1}</option>`).join('');
   }
   ["appearance","status","confidence","empathy","pAppearance","pStatus","pConfidence","pEmpathy"].forEach(fill10);
 
-  function val(id){const el=document.getElementById(id);return el?String(el.value||"").trim():"";}
+  const val=(id)=>{const el=document.getElementById(id);return el?String(el.value||"").trim():"";};
   function num(id,min=1,max=10){const s=val(id);const x=parseInt(s,10);if(isNaN(x))return 0;return Math.max(min,Math.min(max,x));}
-  function clamp(n,a,b){return Math.min(b,Math.max(a,n));}
+  const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 
-  // ----- model (Love intent fixed) -----
+  // ---------- model (Love-only) ----------
   const WEIGHTS = {
     "Female": { appearance:0.23, status:0.38, empathy:0.12, confidence:0.27 },
     "Male":   { appearance:0.46, status:0.12, empathy:0.22, confidence:0.20 },
     "Other/Unspecified": { appearance:0.30, status:0.25, empathy:0.25, confidence:0.20 }
   };
   const INTENT_DELTA = { "Love": { empathy:+0.06, status:+0.02, appearance:-0.04, confidence:-0.04 } };
-  const TRAIT_LABELS = { appearance:"Appearance", status:"Status", empathy:"Empathy", confidence:"Confidence" };
 
-  function mixWeights(base){ // Love-only
+  function mixWeights(base){
     const delta = INTENT_DELTA["Love"];
     const mixed = {...base};
     for(const k of Object.keys(delta)){ mixed[k] = Math.max(0.05,(mixed[k]??0)+delta[k]); }
@@ -302,19 +290,18 @@
     return { score, left, right };
   }
 
-  function labelFromScore(score){
-    if(score>=70) return {label:"Likely", cls:"match-high"};
-    if(score>=60) return {label:"Good chance", cls:"match-med"};
-    if(score>=45) return {label:"Maybe", cls:"match-warn"};
-    return {label:"Unlikely", cls:"match-low"};
+  function labelBand(score){
+    if(score>=70) return {band:"Likely", cls:"match-likely"};
+    if(score>=60) return {band:"Match", cls:"match-match"};
+    if(score>=45) return {band:"Challenging", cls:"match-chal"};
+    return {band:"Unrealistic", cls:"match-unre"};
   }
 
-  // ----- context (kept, compact) -----
+  // ---------- context modifiers ----------
   function contextModifier(you, partner){
     let mod=0;
     const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
     const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
-    // Love-only logic:
     if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
     if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
     if(yK==="full-time custody" && pK==="none") mod+=2;
@@ -333,14 +320,13 @@
     if(gap>=20) mod+=6; else if(gap>=15) mod+=3; else if(gap>=10) mod+=1;
     return mod;
   }
-
   function applyContext(score, you, partner){
     const mod = contextModifier(you, partner);
     const damp = Math.max(0.6, 1 - mod*0.02);
     return Math.round(score*damp);
   }
 
-  // ----- IO mapping -----
+  // ---------- IO ----------
   function readPerson(prefix){
     if(prefix==="p"){
       return {
@@ -351,7 +337,11 @@
           status:     num("pStatus")||5,
           empathy:    num("pEmpathy")||5,
           confidence: num("pConfidence")||5,
-        }
+        },
+        background: val("pBackground") || "",
+        origin:     val("pOrigin") || "",
+        kids:       val("pKids") || "None",
+        wantKids:   val("pWantKids") || "Maybe",
       };
     }
     return {
@@ -370,50 +360,103 @@
     };
   }
 
-  function readPartnerMeta(){
-    return {
-      background: val("pBackground") || "",
-      origin:     val("pOrigin") || "",
-      kids:       val("pKids") || "None",
-      wantKids:   val("pWantKids") || "Maybe",
-    };
+  // ---------- Human-language generator ----------
+  const WORDS = {
+    Likely:      ["spark","flow","green light","synergy","aligned","smooth","locked-in","momentum","chemistry","strong fit","solid base","clicking"],
+    Match:       ["promising","workable","steady","balanced","real shot","doable","potential","growing","explore","on track","worth it","solid chance"],
+    Challenging: ["hurdles","friction","effort","rough edges","obstacles","heavy lift","uphill","bumpy","shaky","tension","patchy","mixed signals"],
+    Unrealistic: ["off-track","mismatch","clash","low vibe","unlikely","disconnect","far apart","gap","no flow","hard to click","out of sync","different lanes"]
+  };
+
+  const TEMPLATES = {
+    Likely: [
+      "The {w1} is obvious and things feel {w2}.",
+      "This looks like a {w1}—real {w2} and easy momentum.",
+      "You’re {w1} and the vibe is {w2}.",
+      "Strong {w1}; connection feels {w2} from the start.",
+      "{w1} energy with a {w2} path forward."
+    ],
+    Match: [
+      "Feels {w1}—a {w2} path if you nurture it.",
+      "A {w1} setup with {w2} potential.",
+      "This is {w1}; give it time and {w2}.",
+      "{w1} overall, with a {w2} chance to grow.",
+      "A {w1} match that’s {w2} to build on."
+    ],
+    Challenging: [
+      "There are {w1}; expect a {w2} road.",
+      "Attraction is there, but {w1} make it {w2}.",
+      "Some {w1} ahead—could be {w2} without alignment.",
+      "It’s {w1} right now; progress may feel {w2}.",
+      "You’ll meet {w1}; keep expectations {w2}."
+    ],
+    Unrealistic: [
+      "The vibe feels {w1}—chemistry is {w2}.",
+      "This reads {w1}, with {w2} energy.",
+      "You’re {w1}; connection will be {w2}.",
+      "{w1} signals here—things may stay {w2}.",
+      "Overall {w1}; likely {w2} for now."
+    ]
+  };
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function humanize(band){
+    const words = WORDS[band];
+    const tpl   = pick(TEMPLATES[band]);
+    let w1 = pick(words), w2 = pick(words);
+    // avoid same word twice
+    for(let i=0;i<4 && w2===w1;i++) w2 = pick(words);
+    // capitalize first letter nicely
+    const sentence = tpl.replace("{w1}", w1).replace("{w2}", w2);
+    return sentence.charAt(0).toUpperCase() + sentence.slice(1);
   }
 
-  // ----- explain -----
-  function topDrivers(weights, person){
-    return Object.entries(weights).map(([k,w])=>({k, w, val: person.traits[k]}))
-      .sort((a,b)=>b.w-a.w).slice(0,3);
-  }
+  // A second line tailored to *why* (soft, non-mathy cues)
+  const WHY = {
+    Likely: [
+      "You notice the good stuff fast—keep the pace natural.",
+      "Lean into shared energy and simple wins.",
+      "Let it breathe; the chemistry is already doing the work."
+    ],
+    Match: [
+      "There’s enough here to explore—small dates, real talk.",
+      "Focus on easy overlap; don’t over-engineer it.",
+      "Keep it steady; curiosity beats intensity."
+    ],
+    Challenging: [
+      "Name the friction early and keep plans lightweight.",
+      "Short, low-stakes hangs help you read it clearly.",
+      "If it drains you, step back and reset the tempo."
+    ],
+    Unrealistic: [
+      "It’s okay to pass—save energy for better fits.",
+      "Wish them well and keep your bar where it belongs.",
+      "No need to force a vibe that isn’t there."
+    ]
+  };
 
-  function makeReport({me, them, res, finalScore, label}){
+  // ---------- Report ----------
+  function makeReport({me, them, res, finalScore, band, line1, line2}){
     const {left,right,score}=res;
-    const lines = [
+    return [
       "Attraction Finder — personal result",
       "Date: "+new Date().toISOString(),
       "Intent: Love",
       "",
       `You (${me.gender}, ${me.age}) vs Them (${them.gender}, ${them.age})`,
-      `Mutual Match Score (raw): ${score}`,
-      `Final Score (context-adjusted): ${finalScore} — ${label}`,
+      `Final Score: ${finalScore} — ${band}`,
       "",
-      `Your view of them: ${(left.fit*100).toFixed(1)} | utility ${(left.utility*100).toFixed(1)} | age ${(left.ageBase*100).toFixed(0)}% | gap ${(left.dir*100).toFixed(0)}%`,
-      `Their view of you: ${(right.fit*100).toFixed(1)} | utility ${(right.utility*100).toFixed(1)} | age ${(right.ageBase*100).toFixed(0)}% | gap ${(right.dir*100).toFixed(0)}%`,
+      line1,
+      line2,
       "",
-      "Trait weights (you evaluating): "+JSON.stringify(left.weights),
-      "Trait weights (them evaluating): "+JSON.stringify(right.weights)
-    ];
-    return lines.join("\n");
+      // Keep technicals minimal but available for power users:
+      `Raw mutual score: ${score}`,
+      `Your view (internal): utility ${(left.utility*100).toFixed(1)}; age ${Math.round(left.ageBase*100)}%; gap ${Math.round(left.dir*100)}%`,
+      `Their view (internal): utility ${(right.utility*100).toFixed(1)}; age ${Math.round(right.ageBase*100)}%; gap ${Math.round(right.dir*100)}%`
+    ].join("\n");
   }
 
-  function downloadText(filename, text){
-    const blob = new Blob([text], {type:"text/plain"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ----- wire up -----
+  // ---------- wire ----------
   const calcBtn = document.getElementById("calcBtn");
   const reportBtn = document.getElementById("reportBtn");
   const resetBtn = document.getElementById("resetBtn");
@@ -429,7 +472,7 @@
 
   calcBtn.addEventListener("click", ()=>{
     const me   = readPerson("");
-    const them = { ...readPerson("p"), ...readPartnerMeta() };
+    const them = readPerson("p");
 
     if(!(me.age>=18 && me.age<=100) || !(them.age>=18 && them.age<=100)){
       alert("Ages must be 18–100."); return;
@@ -438,8 +481,9 @@
     const res = mutualMatch(me, them);
     let finalScore = applyContext(res.score, me, them);
     finalScore = clamp(finalScore, 0, 100);
-    const {label, cls} = labelFromScore(finalScore);
+    const {band, cls} = labelBand(finalScore);
 
+    // UI header bits
     document.getElementById("youMeta").textContent =
       `${me.gender}, ${me.age} • A${me.traits.appearance}/S${me.traits.status}/E${me.traits.empathy}/C${me.traits.confidence}`;
     document.getElementById("pMeta").textContent =
@@ -448,39 +492,31 @@
     const matchEl = document.getElementById("matchLevel");
     matchEl.className = "score "+cls;
     matchEl.textContent = `${finalScore} / 100`;
-    document.getElementById("labelText").textContent = label;
+    document.getElementById("labelText").textContent = band;
 
-    const tipsHigh=["Strong fit. Keep momentum and communicate clearly.","Green light. Focus on connection, not perfection."];
-    const tipsMed =["Workable match with differences to navigate.","Promising if expectations are aligned early."];
-    const tipsLow =["Low odds under current dynamics. Consider recalibration.","Gaps are wide — try small experiments first."];
-    const tipPool = finalScore>=70?tipsHigh: finalScore>=50?tipsMed: tipsLow;
-    document.getElementById("randMessage").textContent = tipPool[Math.floor(Math.random()*tipPool.length)];
-
-    const L = res.left, R = res.right;
-    const lTop = topDrivers(L.weights, them);
-    const rTop = topDrivers(R.weights, me);
-    document.getElementById("leftLine").textContent  =
-      `Utility ${(L.utility*100).toFixed(1)} — Age base ${(L.ageBase*100).toFixed(0)}% — Gap ${(L.dir*100).toFixed(0)}%`;
-    document.getElementById("rightLine").textContent =
-      `Utility ${(R.utility*100).toFixed(1)} — Age base ${(R.ageBase*100).toFixed(0)}% — Gap ${(R.dir*100).toFixed(0)}%`;
-
-    document.getElementById("leftTop").innerHTML =
-      lTop.map(d=>`<li>${TRAIT_LABELS[d.k]} carries ${(L.weights[d.k]*100).toFixed(0)}% weight; they’re a ${d.val}/10</li>`).join("");
-    document.getElementById("rightTop").innerHTML =
-      rTop.map(d=>`<li>${TRAIT_LABELS[d.k]} carries ${(R.weights[d.k]*100).toFixed(0)}% weight; you’re a ${d.val}/10</li>`).join("");
+    // Human copy (no numbers)
+    const line1 = humanize(band);
+    const line2 = pick(WHY[band]);
+    document.getElementById("humanCopy").textContent = line1;
+    document.getElementById("humanCopy2").textContent = line2;
 
     document.getElementById("result").hidden = false;
 
-    lastReport = makeReport({me, them, res, finalScore, label});
+    // Build downloadable report (light technicals included)
+    lastReport = makeReport({me, them, res, finalScore, band, line1, line2});
     reportBtn.disabled = false;
   });
 
   reportBtn.addEventListener("click", ()=>{
     if(!lastReport) return;
-    downloadText("attraction-finder-report.txt", lastReport);
+    const blob = new Blob([lastReport], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "attraction-finder-report.txt"; a.click();
+    URL.revokeObjectURL(url);
   });
 
-  // ----- seed defaults -----
+  // ---------- seed defaults ----------
   (function seed(){
     document.getElementById("gender").value = "Male";
     document.getElementById("age").value = "35";
