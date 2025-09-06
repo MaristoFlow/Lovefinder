@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attraction Finder 2.0</title>
+  <title>Attraction Finder 2.1</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
     :root{--bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838}
@@ -20,18 +20,19 @@
     button{padding:12px 18px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
     button:hover{filter:brightness(.95)}
     .result{display:none}
-    .score{font-size:1.25rem;font-weight:700}
+    .score{font-size:1.35rem;font-weight:800}
     .match-high{color:#90f9c4}
     .match-med{color:#ffe28a}
+    .match-warn{color:#ffbc7a}
     .match-low{color:#ff9a9a}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.85rem;margin-bottom:6px}
-    .small{font-size:.9rem;color:var(--muted)}
+    .small{font-size:.95rem;color:var(--muted)}
     hr{border:0;border-top:1px solid var(--line);margin:14px 0}
   </style>
 </head>
 <body>
   <header>
-    <h1>Attraction Finder 2.0</h1>
+    <h1>Attraction Finder 2.1</h1>
     <p>Clarity and insight into hidden attraction dynamics</p>
   </header>
 
@@ -146,15 +147,11 @@
       <h2>Result</h2>
       <div>
         <span id="youMeta" class="pill"></span>
-        <div id="youScore" class="score"></div>
-        <div class="small" id="youMsg"></div>
-        <hr>
         <span id="pMeta" class="pill"></span>
-        <div id="pScore" class="score"></div>
-        <div class="small" id="pMsg"></div>
         <hr>
         <div id="matchLevel" class="score"></div>
-        <div class="small" id="alignment"></div>
+        <div class="small" id="randMessage"></div>
+        <div class="small" id="diffs"></div>
       </div>
     </section>
   </main>
@@ -167,6 +164,7 @@
     }
     ["appearance","status","confidence","empathy","pAppearance","pStatus","pConfidence","pEmpathy"].forEach(fill10);
 
+    // Helpers
     const v = id => document.getElementById(id).value.trim();
     const n = id => { const s=v(id); const x=parseInt(s,10); return isNaN(x)?0:Math.max(1,Math.min(10,x)); };
     const clamp01 = x => Math.max(0, Math.min(10, x));
@@ -180,6 +178,7 @@
       return {appearance,status,confidence,empathy};
     }
 
+    // Individual weights: age, gender, class + empathy 65+, 75+ penalties
     function individualAdjust(raw, other){
       let { gender, age, background, origin } = raw;
       let { appearance, status, confidence, empathy } = raw;
@@ -229,11 +228,6 @@
     }
 
     function totalScore(s){ return s.appearance+s.status+s.confidence+s.empathy; }
-    function interpret(t){
-      if(t>=30) return "Very strong profile. High attraction potential.";
-      if(t>=20) return "Balanced with room to grow.";
-      return "Weaker profile. Improve key areas.";
-    }
 
     function ageGapPenalty(ya,pa){
       const g=Math.abs(ya-pa);
@@ -244,17 +238,20 @@
       return 0;
     }
 
+    // Compatibility: background (sex-mode novelty vs relationship homogamy), lifestyle origin match, cross-age dynamics, relationship bonuses, age-gap
     function compatibilityModifier(you,partner){
       let mod=0;
+
       const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
       const yl=(you.looking||"").toLowerCase(), pl=(partner.looking||"").toLowerCase();
       const sexMode = (yl==="sex" || pl==="sex") && !(yl==="relationship" && pl==="relationship");
 
+      // Background
       if(yb && pb){
         if(sexMode){
           if(yb !== pb){
             const bothSex = (yl==="sex" && pl==="sex");
-            mod -= bothSex ? 3 : 2;
+            mod -= bothSex ? 3 : 2; // novelty boost
           }
         }else{
           if(yb===pb){
@@ -268,23 +265,27 @@
         }
       }
 
+      // Lifestyle Origin alignment: same = strong bonus
       const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
       if(yo && po && yo===po){ mod -= 3; }
 
+      // Cross dynamics (age/gender perceived mismatches)
       const yg=(you.gender||"").toLowerCase(), pg=(partner.gender||"").toLowerCase();
-      const ya=parseInt(you.age,10)||0, pa=parseInt(partner.age,10)||0;
+      const ya=parseInt(you.age,10)||0,        pa=parseInt(partner.age,10)||0;
 
       if(yg==="male"&&ya>=30&&ya<=40&&pg==="female"&&pa>=20&&pa<=25) mod+=2;
       if(yg==="female"&&ya>=35&&ya<=45&&pg==="male"&&pa>=18&&pa<=25) mod+=2;
       if(yg==="male"&&ya>=18&&ya<=25&&pg==="female"&&pa>=30&&pa<=35) mod+=2;
       if(pg==="male"&&pa>=18&&pa<=25&&yg==="female"&&ya>=30&&ya<=35) mod+=2;
 
+      // Relationship alignment bonuses (both must choose Relationship)
       const bothRel=(yl==="relationship")&&(pl==="relationship");
       if(bothRel){
         if(Math.abs(ya-pa)<=7) mod -= 2;
         if(ya>=35&&ya<=50&&pa>=35&&pa<=50) mod -= 2;
       }
 
+      // Universal age-gap penalty + directional penalties
       mod += ageGapPenalty(ya,pa);
       if(yg==="male" && ya - pa >= 15 && pa < 35) mod += 6;
       if(yg==="female" && ya - pa >= 12 && pa < 30) mod += 5;
@@ -292,40 +293,104 @@
       return mod;
     }
 
-    function bandFromGapAndOverrule(you,partner,effGap){
+    // New bands + messages
+    const msgs = {
+      matched: [
+        "Aligned values, timing, and energy. Green light.",
+        "Strong fit. Lean in and keep momentum.",
+        "Great match. Focus on connection, not perfection."
+      ],
+      realistic: [
+        "Workable match with some differences to navigate.",
+        "Promising if you communicate clearly about expectations.",
+        "Realistic path: set boundaries and grow together."
+      ],
+      challenged: [
+        "Realistic with a major challenge. Pick your battles.",
+        "One big friction point stands out. Address it early.",
+        "Potential exists, but stability may be shaky without effort."
+      ],
+      severe: [
+        "Mismatch is too large right now. Recalibrate or rethink.",
+        "Dynamics are pulling apart. Adjust goals before proceeding.",
+        "Compatibility is severely limited. Consider a different target."
+      ]
+    };
+
+    function choose(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+    // Determine label from effective gap + context
+    function bandFromGapAndOverrule(you, partner, effGap){
       const ya=parseInt(you.age,10)||0, pa=parseInt(partner.age,10)||0;
       const hardGap=Math.abs(ya-pa);
-      if(hardGap>=20) return {label:"Unrealistic",cls:"match-low",tip:"Age gap over 20 years."};
-      if(effGap<=4) return {label:"Match",cls:"match-high",tip:"Strong overall alignment."};
-      if(effGap<=10) return {label:"Realistic",cls:"match-med",tip:"Partial alignment; target small gaps."};
-      return {label:"Unrealistic",cls:"match-low",tip:"Significant differences; recalibrate or improve key areas."};
+      if(hardGap>=20) return {key:"severe", label:"Impossible/Severe", cls:"match-low", tip:"Age gap over 20 years."};
+
+      const bothRel = (you.looking||"").toLowerCase()==="relationship" &&
+                      (partner.looking||"").toLowerCase()==="relationship";
+      const originMismatch = (you.origin||"").toLowerCase() !== (partner.origin||"").toLowerCase();
+      const backgroundMismatch = (you.background||"").toLowerCase() !== (partner.background||"").toLowerCase();
+
+      if(effGap <= 4)  return {key:"matched", label:"Matched", cls:"match-high", tip:"Strong overall alignment."};
+
+      // Realistic vs Challenged nuance
+      if(effGap <= 10){
+        if(bothRel && (originMismatch || backgroundMismatch)){
+          return {key:"challenged", label:"Challenged", cls:"match-warn", tip:"Realistic with a major challenge."};
+        }
+        return {key:"realistic", label:"Realistic", cls:"match-med", tip:"Partial alignment; workable with effort."};
+      }
+
+      // High gap becomes Severe
+      if(effGap > 10) return {key:"severe", label:"Impossible/Severe", cls:"match-low", tip:"Gaps are too large right now."};
+
+      // Fallback
+      return {key:"severe", label:"Impossible/Severe", cls:"match-low", tip:"Compatibility is very low."};
     }
 
-    function biggestGaps(a,b){
+    // Biggest gaps (names only)
+    function biggestGapNames(a,b){
       return [["Appearance",a.appearance,b.appearance],["Status",a.status,b.status],["Confidence",a.confidence,b.confidence],["Empathy",a.empathy,b.empathy]]
-      .map(([k,x,y])=>({k,gap:Math.abs(x-y),x,y})).sort((u,v)=>v.gap-u.gap).slice(0,2)
-      .map(d=>`${d.k}: ${d.x.toFixed(1)} vs ${d.y.toFixed(1)}`).join(" • ")||"Profiles are balanced across the board.";
+        .map(([k,x,y])=>({k,gap:Math.abs(x-y)})).sort((u,v)=>v.gap-u.gap).slice(0,2).map(d=>d.k);
     }
 
+    // UI
     document.getElementById("calcBtn").addEventListener("click",()=>{
       const you={gender:v("gender"),age:v("age"),background:v("background"),origin:v("origin"),looking:v("looking"),
         appearance:n("appearance"),status:n("status"),confidence:n("confidence"),empathy:n("empathy")};
       const p={gender:v("pGender"),age:v("pAge"),background:v("pBackground"),origin:v("pOrigin"),
         appearance:n("pAppearance"),status:n("pStatus"),confidence:n("pConfidence"),empathy:n("pEmpathy")};
-      if(!you.gender||!you.age||!you.looking||!p.gender||!p.age){alert("Please fill Gender, Age, and Looking for (you), plus Gender and Age (partner).");return;}
-      const youAdj=individualAdjust(you,p),pAdj=individualAdjust(p,you);
-      const youTotal=totalScore(youAdj),pTotal=totalScore(pAdj);
-      const baseGap=Math.abs(youTotal-pTotal),compMod=compatibilityModifier(you,p);
+
+      if(!you.gender||!you.age||!you.looking||!p.gender||!p.age){
+        alert("Please fill Gender, Age, and Looking for (you), plus Gender and Age (partner).");
+        return;
+      }
+
+      const youAdj=individualAdjust(you,p), pAdj=individualAdjust(p,you);
+
+      const baseGap=Math.abs(totalScore(youAdj)-totalScore(pAdj));
+      const compMod=compatibilityModifier(you,p);
       const effGap=Math.max(0, baseGap + compMod);
-      const level=bandFromGapAndOverrule(you,p,effGap);
-      document.getElementById("youMeta").textContent=`${you.gender} • ${you.age} • ${you.background||"Background"} • ${you.origin||"Origin"} • ${v("looking")}`;
-      document.getElementById("pMeta").textContent=`${p.gender} • ${p.age} • ${p.background||"Background"} • ${p.origin||"Origin"}`;
-      document.getElementById("youScore").textContent=`Your Score: ${youTotal.toFixed(1)}/40`;
-      document.getElementById("youMsg").textContent=interpret(youTotal);
-      document.getElementById("pScore").textContent=`Partner Score: ${pTotal.toFixed(1)}/40`;
-      document.getElementById("pMsg").textContent=interpret(pTotal);
-      const node=document.getElementById("matchLevel");node.className=`score ${level.cls}`;node.textContent=level.label;
-      document.getElementById("alignment").textContent=`${level.tip} Biggest gaps → ${biggestGaps(youAdj,pAdj)}.`;
+
+      const band=bandFromGapAndOverrule(you,p,effGap);
+
+      document.getElementById("youMeta").textContent =
+        `${you.gender} • ${you.age} • ${you.background||"Background"} • ${you.origin||"Origin"} • ${v("looking")}`;
+      document.getElementById("pMeta").textContent   =
+        `${p.gender} • ${p.age} • ${p.background||"Background"} • ${p.origin||"Origin"}`;
+
+      const node=document.getElementById("matchLevel");
+      node.className=`score ${band.cls}`;
+      node.textContent=band.label;
+
+      // randomized message
+      document.getElementById("randMessage").textContent = choose(msgs[band.key]);
+
+      // show only names of key differences
+      const names = biggestGapNames(youAdj,pAdj);
+      document.getElementById("diffs").textContent = names.length
+        ? `Key differences to watch: ${names.join(" & ")}.`
+        : `No major differences detected.`;
+
       document.getElementById("result").style.display="block";
       window.scrollTo({ top: document.getElementById("result").offsetTop - 10, behavior:"smooth" });
     });
