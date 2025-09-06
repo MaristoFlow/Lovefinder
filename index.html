@@ -5,9 +5,7 @@
   <title>Attraction Finder 2.0</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    :root{
-      --bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838;
-    }
+    :root{--bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838}
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
     header{text-align:center;padding:22px 16px}
@@ -18,7 +16,7 @@
     .grid{display:grid;gap:10px}
     .grid.two{grid-template-columns:1fr 1fr}
     label{font-size:.92rem;color:var(--muted)}
-    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f131b;color:var(--ink)}
+    select,input{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f131b;color:var(--ink)}
     button{padding:12px 18px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
     button:hover{filter:brightness(.95)}
     .result{display:none}
@@ -48,27 +46,15 @@
             <option value="">-- Select --</option>
             <option>Male</option>
             <option>Female</option>
-            <option>Other</option>
           </select>
         </div>
         <div>
           <label>Age</label>
-          <input id="age" type="number" min="18" max="100">
+          <input id="age" type="number" min="18" max="100" placeholder="e.g. 28">
         </div>
       </div>
+
       <div class="grid two">
-        <div>
-          <label>Origin</label>
-          <select id="origin">
-            <option value="">-- Select --</option>
-            <option>Asian</option>
-            <option>Black</option>
-            <option>White</option>
-            <option>Latino</option>
-            <option>Middle Eastern</option>
-            <option>Other</option>
-          </select>
-        </div>
         <div>
           <label>Background</label>
           <select id="background">
@@ -78,23 +64,35 @@
             <option>Lower</option>
           </select>
         </div>
-      </div>
-      <div class="grid two">
         <div>
           <label>Looking for</label>
           <select id="looking">
             <option value="">-- Select --</option>
             <option>Sex</option>
             <option>Relationship</option>
-            <option>Both</option>
           </select>
         </div>
       </div>
+
+      <div class="grid two">
+        <div>
+          <label>Lifestyle Origin</label>
+          <select id="origin">
+            <option value="">-- Select --</option>
+            <option>Urban Global</option>
+            <option>Traditional Local</option>
+            <option>Adventurer/Nomad</option>
+            <option>Career-focused</option>
+            <option>Community-focused</option>
+          </select>
+        </div>
+      </div>
+
       <div class="grid two" style="margin-top:12px">
-        <div><label>Appearance (1–10)</label><input id="appearance" type="number" min="1" max="10"></div>
-        <div><label>Status (1–10)</label><input id="status" type="number" min="1" max="10"></div>
-        <div><label>Confidence (1–10)</label><input id="confidence" type="number" min="1" max="10"></div>
-        <div><label>Empathy (1–10)</label><input id="empathy" type="number" min="1" max="10"></div>
+        <div><label>Appearance</label><select id="appearance"></select></div>
+        <div><label>Status</label><select id="status"></select></div>
+        <div><label>Confidence</label><select id="confidence"></select></div>
+        <div><label>Empathy</label><select id="empathy"></select></div>
       </div>
     </section>
 
@@ -108,27 +106,15 @@
             <option value="">-- Select --</option>
             <option>Male</option>
             <option>Female</option>
-            <option>Other</option>
           </select>
         </div>
         <div>
           <label>Age</label>
-          <input id="pAge" type="number" min="18" max="100">
+          <input id="pAge" type="number" min="18" max="100" placeholder="e.g. 24">
         </div>
       </div>
+
       <div class="grid two">
-        <div>
-          <label>Origin</label>
-          <select id="pOrigin">
-            <option value="">-- Select --</option>
-            <option>Asian</option>
-            <option>Black</option>
-            <option>White</option>
-            <option>Latino</option>
-            <option>Middle Eastern</option>
-            <option>Other</option>
-          </select>
-        </div>
         <div>
           <label>Background</label>
           <select id="pBackground">
@@ -138,12 +124,24 @@
             <option>Lower</option>
           </select>
         </div>
+        <div>
+          <label>Lifestyle Origin</label>
+          <select id="pOrigin">
+            <option value="">-- Select --</option>
+            <option>Urban Global</option>
+            <option>Traditional Local</option>
+            <option>Adventurer/Nomad</option>
+            <option>Career-focused</option>
+            <option>Community-focused</option>
+          </select>
+        </div>
       </div>
+
       <div class="grid two" style="margin-top:12px">
-        <div><label>Appearance (1–10)</label><input id="pAppearance" type="number" min="1" max="10"></div>
-        <div><label>Status (1–10)</label><input id="pStatus" type="number" min="1" max="10"></div>
-        <div><label>Confidence (1–10)</label><input id="pConfidence" type="number" min="1" max="10"></div>
-        <div><label>Empathy (1–10)</label><input id="pEmpathy" type="number" min="1" max="10"></div>
+        <div><label>Appearance</label><select id="pAppearance"></select></div>
+        <div><label>Status</label><select id="pStatus"></select></div>
+        <div><label>Confidence</label><select id="pConfidence"></select></div>
+        <div><label>Empathy</label><select id="pEmpathy"></select></div>
       </div>
     </section>
 
@@ -168,34 +166,62 @@
   </main>
 
   <script>
-    // ---------- helpers ----------
+    // Populate all stat selects with 1..10
+    function fill10(id){
+      const el=document.getElementById(id);
+      el.innerHTML = '<option value="">--</option>' + Array.from({length:10},(_,i)=>`<option>${i+1}</option>`).join('');
+    }
+    ["appearance","status","confidence","empathy","pAppearance","pStatus","pConfidence","pEmpathy"].forEach(fill10);
+
     const v = id => document.getElementById(id).value.trim();
-    const n = id => { const x = parseInt(document.getElementById(id).value,10); return isNaN(x)?0:Math.max(0,Math.min(10,x)); };
+    const n = id => { const s=v(id); const x=parseInt(s,10); return isNaN(x)?0:Math.max(1,Math.min(10,x)); };
     const clamp01 = x => Math.max(0, Math.min(10, x));
 
-    // ---------- individual hidden weights (Draft C) ----------
+    // Lifestyle Origin hidden weights (neutral archetypes)
+    // Small, asymmetrical nudges to keep realism without being sensitive.
+    function applyLifestyleOrigin(origin, gender, traits){
+      const o=(origin||"").toLowerCase(), g=(gender||"").toLowerCase();
+      let {appearance,status,confidence,empathy} = traits;
+
+      if(o==="career-focused"){
+        status += 2; empathy -= 1;            // career → status up, warmth perception slightly down
+      } else if(o==="urban global"){
+        status += 1; confidence += 1;         // cosmopolitan polish + social confidence
+      } else if(o==="traditional local"){
+        empathy += 1; confidence -= 1;        // nurturing vibe, more reserved
+      } else if(o==="adventurer/nomad"){
+        confidence += 2; status -= 1;         // bold/outgoing, less settled
+      } else if(o==="community-focused"){
+        empathy += 2; status -= 1;            // warm/community-first, less status-driven
+      }
+
+      return {appearance,status,confidence,empathy};
+    }
+
+    // Individual hidden weights (age, gender, class) + empathy 65+, 75+ global
     function individualAdjust(raw, other){
-      let { gender, age, origin, background } = raw;
+      let { gender, age, background, origin } = raw;
       let { appearance, status, confidence, empathy } = raw;
 
       gender = (gender||"").toLowerCase();
-      origin = (origin||"").toLowerCase();
       background = (background||"").toLowerCase();
-
       const a  = parseInt(raw.age,10)||0;
       const oa = parseInt(other.age,10)||0;
       const og = (other.gender||"").toLowerCase();
 
-      // Age & Gender
+      // Female
       if(gender==="female"){
         if(a>=18 && a<=25){ appearance+=2; confidence-=2; empathy+=1; }
         if(a>=26 && a<=35){ appearance-=1; empathy+=2; }
         if(a>=36 && a<=45){ appearance-=2; empathy+=2; }
-        if(a>=40 && a<=50 && og==="male" && oa>=18 && oa<=25){ appearance+=1; }
+        if(a>=40 && a<=50 && og==="male" && oa>=18 && oa<=25){ appearance+=1; } // cougar effect
         if(a>=51){ appearance-=2; empathy+=1; }
-        status -= 1;
-        if(a>=60){ status -= 2; }
-      } else if(gender==="male"){
+        status -= 1;                // social undervaluation
+        if(a>=60){ status -= 2; }   // social invisibility
+      }
+
+      // Male
+      if(gender==="male"){
         if(a>=25 && a<=35){ appearance+=1; }
         if(a>=45){ appearance-=1; }
         if(a>=18 && a<=35){ confidence+=2; }
@@ -205,92 +231,112 @@
         if(a>=18 && a<=25){ status-=1; }
       }
 
-      // 75+ global (empathy neutral)
-      if(a>=75){ appearance-=3; status-=3; confidence-=3; }
+      // Grandma/Grandpa empathy boost 65+
+      if(a>=65){ empathy += 2; }
 
-      // Origin (stereotype weights)
-      if(origin==="asian"){
-        if(gender==="female"){ appearance+=1; empathy+=1; }
-        if(gender==="male"){ status+=1; confidence-=1; }
-      }
-      if(origin==="black"){
-        if(gender==="male"){ appearance+=1; confidence+=2; }
-        if(gender==="female"){ confidence+=1; empathy-=1; }
-      }
-      if(origin==="white"){
-        if(gender==="female" && a>=30){ status+=1; }
-        if(gender==="male" && a>=40){ status+=1; }
-      }
-      if(origin==="latino"){
-        if(gender==="female"){ appearance+=1; confidence+=1; }
-        if(gender==="male"){ confidence+=1; empathy-=1; }
-      }
-      if(origin==="middle eastern"){
-        if(gender==="male"){ status+=1; empathy-=1; }
-        if(gender==="female"){ confidence-=1; empathy+=1; }
-      }
+      // 75+ global (empathy neutral to positive)
+      if(a>=75){ appearance-=3; status-=3; confidence-=3; }
 
       // Background / Class (individual)
       if(background==="upper"){ status+=2; }
       else if(background==="lower"){ status-=2; }
 
-      // Clamp (empathy only min 0; others 0..10)
+      // Lifestyle Origin (neutral)
+      ({appearance,status,confidence,empathy} =
+        applyLifestyleOrigin(origin, gender, {appearance,status,confidence,empathy}));
+
+      // Clamp numeric traits (empathy can exceed 10 later if boosted further; we cap here for UI coherence)
       appearance = clamp01(appearance);
       status     = clamp01(status);
       confidence = clamp01(confidence);
-      empathy    = Math.max(0, empathy); // can exceed 10
+      empathy    = Math.max(0, empathy); // empathy may exceed 10 by design, keep no hard upper cap
 
       return { appearance, status, confidence, empathy };
     }
 
     function totalScore(s){ return s.appearance + s.status + s.confidence + s.empathy; }
-    function interpret(t){ if(t>=30) return "Very strong profile. High attraction potential."; if(t>=20) return "Balanced with room to grow."; return "Weaker profile. Improve key areas."; }
+    function interpret(t){
+      if(t>=30) return "Very strong profile. High attraction potential.";
+      if(t>=20) return "Balanced with room to grow.";
+      return "Weaker profile. Improve key areas.";
+    }
 
-    // ---------- compatibility modifiers (Draft C) ----------
+    // Age-gap penalty curve
+    function ageGapPenalty(ya, pa){
+      const gap = Math.abs(ya - pa);
+      let pen = 0;
+      if (gap >= 10 && gap < 15) pen += 2;
+      else if (gap >= 15 && gap < 20) pen += 4;
+      else if (gap >= 20 && gap < 25) pen += 7;
+      else if (gap >= 25) pen += 10;
+      return pen;
+    }
+
+    // Compatibility modifier: class homogamy, lifestyle origin alignment, cross-dynamics, age-gap
     function compatibilityModifier(you, partner){
       let mod = 0;
 
-      // Background homogamy
-      const yb = (you.background||"").toLowerCase();
-      const pb = (partner.background||"").toLowerCase();
+      // Background homogamy (reduce gap if same; increase if big jump)
+      const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
       if(yb && pb){
         if(yb===pb){
-          if(yb==="upper") mod += 2;
-          else if(yb==="middle") mod += 1;
-          // low↔low baseline (0)
+          if(yb==="upper") mod -= 2;
+          else if(yb==="middle") mod -= 1;
+          // low↔low baseline
         } else {
-          if(yb==="lower" && pb==="upper") mod -= 3;
-          if(yb==="upper" && pb==="lower") mod -= 2;
-          if(yb==="middle" && (pb==="upper"||pb==="lower")) mod -= 1;
+          if(yb==="lower" && pb==="upper") mod += 3;
+          if(yb==="upper" && pb==="lower") mod += 2;
+          if(yb==="middle" && (pb==="upper"||pb==="lower")) mod += 1;
         }
       }
 
-      // Cross-dynamics
-      const yg = (you.gender||"").toLowerCase(), pg = (partner.gender||"").toLowerCase();
-      const ya = parseInt(you.age,10)||0, pa = parseInt(partner.age,10)||0;
-      const yl = (you.looking||"").toLowerCase(), pl = (partner.looking||"").toLowerCase();
+      // Lifestyle Origin alignment (tiny nudges)
+      const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
+      if(yo && po){
+        if(yo===po){ mod -= 1; } // small bonus for same lifestyle origin
+        // notable mismatch nudges
+        const pair = new Set([yo,po]);
+        const mis1 = pair.has("urban global") && pair.has("traditional local");
+        const mis2 = pair.has("career-focused") && pair.has("adventurer/nomad");
+        if(mis1 || mis2) mod += 1;
+      }
 
-      // M30–40 seeking F20–25: -2 compatibility (and +2 confidence to man handled in individual? no, do pair boost here)
-      if(yg==="male" && ya>=30 && ya<=40 && pg==="female" && pa>=20 && pa<=25){ mod -= 2; }
+      // Cross dynamics (age/gender perceived mismatches)
+      const yg=(you.gender||"").toLowerCase(), pg=(partner.gender||"").toLowerCase();
+      const ya=parseInt(you.age,10)||0,        pa=parseInt(partner.age,10)||0;
+      const yl=(you.looking||"").toLowerCase(), pl=(partner.looking||"").toLowerCase();
 
-      // F35–45 seeking M18–25: -2 compatibility
-      if(yg==="female" && ya>=35 && ya<=45 && pg==="male" && pa>=18 && pa<=25){ mod -= 2; }
+      if(yg==="male" && ya>=30 && ya<=40 && pg==="female" && pa>=20 && pa<=25){ mod += 2; }
+      if(yg==="female" && ya>=35 && ya<=45 && pg==="male" && pa>=18 && pa<=25){ mod += 2; }
+      if(yg==="male" && ya>=18 && ya<=25 && pg==="female" && pa>=30 && pa<=35){ mod += 2; }
+      if(pg==="male" && pa>=18 && pa<=25 && yg==="female" && ya>=30 && ya<=35){ mod += 2; }
 
-      // M18–25 vs F30–35: -2
-      if(yg==="male" && ya>=18 && ya<=25 && pg==="female" && pa>=30 && pa<=35){ mod -= 2; }
-      if(pg==="male" && pa>=18 && pa<=25 && yg==="female" && ya>=30 && ya<=35){ mod -= 2; }
+      // Relationship alignment bonus (both must choose Relationship)
+      const bothRel = (yl==="relationship") && (pl==="relationship");
+      if(bothRel){
+        if(Math.abs(ya-pa)<=7) mod -= 2;
+        if(ya>=35 && ya<=50 && pa>=35 && pa<=50) mod -= 2;
+      }
 
-      // Both 35–50 seeking Relationship: +2
-      const bothWantRel = (yl==="relationship" || yl==="both") && (pl==="relationship" || pl==="both");
-      if(ya>=35 && ya<=50 && pa>=35 && pa<=50 && bothWantRel){ mod += 2; }
+      // Universal age-gap penalty
+      mod += ageGapPenalty(ya, pa);
+
+      // Directional penalties (older >> younger)
+      if(yg==="male" && ya - pa >= 15 && pa < 35) mod += 6;
+      if(yg==="female" && ya - pa >= 12 && pa < 30) mod += 5;
 
       return mod;
     }
 
-    function matchLevelFromGap(gap){
-      if(gap <= 4)  return {label:"Match level: HIGH", cls:"match-high", tip:"Strong overall alignment."};
-      if(gap <= 10) return {label:"Match level: MEDIUM", cls:"match-med", tip:"Partial alignment; target small gaps."};
-      return {label:"Match level: LOW", cls:"match-low", tip:"Significant differences; recalibrate or improve key areas."};
+    // Bands + 20+ overrule
+    function bandFromGapAndOverrule(you, partner, effGap){
+      const ya=parseInt(you.age,10)||0, pa=parseInt(partner.age,10)||0;
+      const hardGap = Math.abs(ya - pa);
+      if(hardGap >= 20) return {label:"Unrealistic", cls:"match-low", tip:"Age gap over 20 years."};
+
+      if(effGap <= 4)  return {label:"Match", cls:"match-high", tip:"Strong overall alignment."};
+      if(effGap <= 10) return {label:"Realistic", cls:"match-med", tip:"Partial alignment; target small gaps."};
+      return {label:"Unrealistic", cls:"match-low", tip:"Significant differences; recalibrate or improve key areas."};
     }
 
     function biggestGaps(a,b){
@@ -306,41 +352,38 @@
       return arr.map(d=>`${d.k}: ${d.x.toFixed(1)} vs ${d.y.toFixed(1)}`).join(" • ");
     }
 
-    // ---------- UI wiring ----------
     document.getElementById("calcBtn").addEventListener("click", () => {
       const you = {
-        gender: v("gender"), age: v("age"), origin: v("origin"), background: v("background"),
+        gender: v("gender"), age: v("age"), background: v("background"), origin: v("origin"),
         looking: v("looking"),
         appearance: n("appearance"), status: n("status"), confidence: n("confidence"), empathy: n("empathy")
       };
       const p = {
-        gender: v("pGender"), age: v("pAge"), origin: v("pOrigin"), background: v("pBackground"),
+        gender: v("pGender"), age: v("pAge"), background: v("pBackground"), origin: v("pOrigin"),
         appearance: n("pAppearance"), status: n("pStatus"), confidence: n("pConfidence"), empathy: n("pEmpathy")
       };
 
-      // minimal required fields
       if(!you.gender || !you.age || !you.looking || !p.gender || !p.age){
         alert("Please fill Gender, Age, and Looking for (you), plus Gender and Age (partner).");
         return;
       }
 
-      // hidden adjustments
       const youAdj = individualAdjust(you, p);
       const pAdj   = individualAdjust(p, you);
 
       const youTotal = totalScore(youAdj);
       const pTotal   = totalScore(pAdj);
 
-      // compatibility overlay (reduces effective gap)
       const baseGap = Math.abs(youTotal - pTotal);
-      const compMod = compatibilityModifier(you, p);   // can be negative or positive
-      const effGap  = Math.max(0, baseGap - compMod);
+      const compMod = compatibilityModifier(you, p);
+      const effGap  = Math.max(0, baseGap + compMod);
 
-      const level = matchLevelFromGap(effGap);
+      const level = bandFromGapAndOverrule(you, p, effGap);
 
-      // render
-      document.getElementById("youMeta").textContent = `${you.gender} • ${you.age} • ${you.origin||"Origin"} • ${you.background||"Background"} • ${you.looking}`;
-      document.getElementById("pMeta").textContent   = `${p.gender} • ${p.age} • ${p.origin||"Origin"} • ${p.background||"Background"}`;
+      document.getElementById("youMeta").textContent =
+        `${you.gender} • ${you.age} • ${you.background||"Background"} • ${you.origin||"Origin"} • ${v("looking")}`;
+      document.getElementById("pMeta").textContent   =
+        `${p.gender} • ${p.age} • ${p.background||"Background"} • ${p.origin||"Origin"}`;
 
       document.getElementById("youScore").textContent = `Your Score: ${youTotal.toFixed(1)}/40`;
       document.getElementById("youMsg").textContent   = interpret(youTotal);
@@ -352,7 +395,8 @@
       node.className = `score ${level.cls}`;
       node.textContent = level.label;
 
-      document.getElementById("alignment").textContent = `${level.tip} Biggest gaps → ${biggestGaps(youAdj, pAdj)}.`;
+      document.getElementById("alignment").textContent =
+        `${level.tip} Biggest gaps → ${biggestGaps(youAdj, pAdj)}.`;
 
       document.getElementById("result").style.display = "block";
       window.scrollTo({ top: document.getElementById("result").offsetTop - 10, behavior: "smooth" });
