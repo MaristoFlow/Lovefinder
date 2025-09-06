@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attraction Finder — v2.7 (Lean & Human)</title>
+  <title>Attraction Finder — v2.8 (Love & Sex Modes)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Attraction Finder — Love-focused A,S,E,C model with asymmetric age effects and human-readable results.">
+  <meta name="description" content="Attraction Finder — Love/Sex predictor with A,S,E,C model, asymmetric age effects, and human-first feedback.">
   <style>
     :root{
       --bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838;
@@ -29,6 +29,9 @@
     button{padding:12px 16px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
     button.secondary{background:#0f131b;border:1px solid var(--line);color:var(--ink);font-weight:600}
     button:hover{filter:brightness(.95)}
+    .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .seg button{background:#0f131b;color:var(--ink);padding:10px 14px;border:0}
+    .seg button.active{background:var(--accent);color:#fff}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.85rem;margin:6px 8px 10px 0}
     .small{font-size:.95rem;color:var(--muted)}
     .score{font-size:2.2rem;font-weight:900;letter-spacing:.5px}
@@ -38,16 +41,15 @@
     .match-unre{color:var(--low)}
     hr{border:0;border-top:1px solid var(--line);margin:14px 0}
     .section-title{margin:.2rem 0 .6rem 0}
-    .explain{display:grid;gap:10px}
-    .blurb{background:#0f131b;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.4}
+    .blurb{background:#0f131b;border:1px solid var(--line);border-radius:12px;padding:12px;line-height:1.45}
     footer{max-width:960px;margin:0 auto;padding:18px 16px;color:var(--muted);text-align:center;font-size:.9rem}
     :focus{outline:2px solid #81a7ff;outline-offset:2px}
   </style>
 </head>
 <body>
   <header>
-    <h1>Attraction Finder — v2.7</h1>
-    <p>Love-focused predictor with simple, human feedback</p>
+    <h1>Attraction Finder — v2.8</h1>
+    <p>Love or Sex mode. Human-first feedback. No math goggles.</p>
   </header>
 
   <main>
@@ -186,8 +188,12 @@
         <div><label for="pEmpathy">Empathy</label><select id="pEmpathy"></select></div>
       </div>
 
-      <!-- Controls -->
+      <!-- Mode + Controls -->
       <div class="controls">
+        <div class="seg" role="tablist" aria-label="Mode">
+          <button id="modeLove" class="active" role="tab" aria-selected="true">Love</button>
+          <button id="modeSex" role="tab" aria-selected="false">Sex</button>
+        </div>
         <button id="calcBtn">Calculate</button>
         <button id="reportBtn" class="secondary" disabled>Download report</button>
         <button id="resetBtn" class="secondary">Reset</button>
@@ -206,12 +212,21 @@
         <hr>
         <div id="humanCopy" class="blurb"></div>
         <div id="humanCopy2" class="blurb" style="margin-top:8px"></div>
+
+        <hr>
+        <div id="adviceModule">
+          <div class="controls" style="margin:8px 0">
+            <button id="rerollAdvice" class="secondary">Regenerate wording</button>
+            <button id="copyAdvice" class="secondary">Copy this section</button>
+          </div>
+          <div id="adviceWrap" class="blurb"></div>
+        </div>
       </div>
     </section>
   </main>
 
   <footer>
-    v2.7 — Love intent only. Human-first language with randomized copy per band.
+    v2.8 — Love & Sex modes, human-first copy, modular advice.
   </footer>
 
   <script>
@@ -226,16 +241,19 @@
   function num(id,min=1,max=10){const s=val(id);const x=parseInt(s,10);if(isNaN(x))return 0;return Math.max(min,Math.min(max,x));}
   const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 
-  // ---------- model (Love-only) ----------
+  // ---------- model ----------
   const WEIGHTS = {
     "Female": { appearance:0.23, status:0.38, empathy:0.12, confidence:0.27 },
     "Male":   { appearance:0.46, status:0.12, empathy:0.22, confidence:0.20 },
     "Other/Unspecified": { appearance:0.30, status:0.25, empathy:0.25, confidence:0.20 }
   };
-  const INTENT_DELTA = { "Love": { empathy:+0.06, status:+0.02, appearance:-0.04, confidence:-0.04 } };
+  const INTENT_DELTA = {
+    "Love": { empathy:+0.06, status:+0.02, appearance:-0.04, confidence:-0.04 },
+    "Sex":  { appearance:+0.08, confidence:+0.04, empathy:-0.08, status:-0.04 }
+  };
 
-  function mixWeights(base){
-    const delta = INTENT_DELTA["Love"];
+  function mixWeights(base, intent){
+    const delta = INTENT_DELTA[intent];
     const mixed = {...base};
     for(const k of Object.keys(delta)){ mixed[k] = Math.max(0.05,(mixed[k]??0)+delta[k]); }
     const sum = Object.values(mixed).reduce((a,b)=>a+b,0);
@@ -275,17 +293,17 @@
     return 1.0 - (1.0 - mult)*opener;
   }
 
-  function sideFit(evaluator, target){
-    const w = mixWeights(WEIGHTS[evaluator.gender]);
+  function sideFit(evaluator, target, intent){
+    const w = mixWeights(WEIGHTS[evaluator.gender], intent);
     const utility = traitUtility(target, w);
     const ageBase = baseAgeCurve(target.age);
     const dir = directionalGapMultiplier(evaluator.gender, evaluator.age, target.age, utility*10);
     return { fit: clamp(utility*ageBase*dir,0,1), utility, ageBase, dir, weights:w };
   }
 
-  function mutualMatch(a,b){
-    const left = sideFit(a,b);
-    const right= sideFit(b,a);
+  function mutualMatch(a,b,intent){
+    const left = sideFit(a,b,intent);
+    const right= sideFit(b,a,intent);
     const score = Math.round(Math.sqrt(left.fit*right.fit)*100);
     return { score, left, right };
   }
@@ -297,31 +315,40 @@
     return {band:"Unrealistic", cls:"match-unre"};
   }
 
-  // ---------- context modifiers ----------
-  function contextModifier(you, partner){
+  // ---------- context ----------
+  function contextModifier(you, partner, intent){
+    // kids & plans are mostly a Love friction; for Sex we dampen penalties slightly
+    const sexMode = (intent==="Sex");
     let mod=0;
     const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
     const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
-    if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
-    if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
-    if(yK==="full-time custody" && pK==="none") mod+=2;
-    if(pK==="full-time custody" && yK==="none") mod+=2;
-    if(yK!=="none" && pK!=="none") mod-=1;
+
+    if(!sexMode){ // Love
+      if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
+      if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
+      if(yK==="full-time custody" && pK==="none") mod+=2;
+      if(pK==="full-time custody" && yK==="none") mod+=2;
+      if(yK!=="none" && pK!=="none") mod-=1;
+    } else { // Sex: logistics > life plans
+      if(yK==="full-time custody"||pK==="full-time custody") mod+=2;
+      // kid plans mismatches mostly ignored for casual context
+    }
 
     const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
     if(yb && pb){
       if(yb===pb){ mod -= (yb==="upper"?2: yb==="middle"?1:0); }
-      else { if((yb==="upper"&&pb==="lower")||(yb==="lower"&&pb==="upper")) mod+=2; else mod+=1; }
+      else { if((yb==="upper"&&pb==="lower")||(yb==="lower"&&pb==="upper")) mod+= (sexMode?1:2); else mod+= (sexMode?0:1); }
     }
+
     const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
-    if(yo && po){ mod += (yo===po? -1 : 1); }
+    if(yo && po){ mod += (yo===po? -1 : (sexMode?0:1)); }
 
     const gap=Math.abs(you.age-partner.age);
     if(gap>=20) mod+=6; else if(gap>=15) mod+=3; else if(gap>=10) mod+=1;
     return mod;
   }
-  function applyContext(score, you, partner){
-    const mod = contextModifier(you, partner);
+  function applyContext(score, you, partner, intent){
+    const mod = contextModifier(you, partner, intent);
     const damp = Math.max(0.6, 1 - mod*0.02);
     return Math.round(score*damp);
   }
@@ -360,15 +387,14 @@
     };
   }
 
-  // ---------- Human-language generator ----------
-  const WORDS = {
+  // ---------- Human-language generators ----------
+  const WORDS_LOVE = {
     Likely:      ["spark","flow","green light","synergy","aligned","smooth","locked-in","momentum","chemistry","strong fit","solid base","clicking"],
     Match:       ["promising","workable","steady","balanced","real shot","doable","potential","growing","explore","on track","worth it","solid chance"],
     Challenging: ["hurdles","friction","effort","rough edges","obstacles","heavy lift","uphill","bumpy","shaky","tension","patchy","mixed signals"],
     Unrealistic: ["off-track","mismatch","clash","low vibe","unlikely","disconnect","far apart","gap","no flow","hard to click","out of sync","different lanes"]
   };
-
-  const TEMPLATES = {
+  const TPL_LOVE = {
     Likely: [
       "The {w1} is obvious and things feel {w2}.",
       "This looks like a {w1}—real {w2} and easy momentum.",
@@ -398,50 +424,92 @@
       "Overall {w1}; likely {w2} for now."
     ]
   };
+  const WHY_LOVE = {
+    Likely:      ["You notice the good stuff fast—keep the pace natural.","Lean into shared energy and simple wins.","Let it breathe; the chemistry is already doing the work."],
+    Match:       ["There’s enough here to explore—small dates, real talk.","Focus on easy overlap; don’t over-engineer it.","Keep it steady; curiosity beats intensity."],
+    Challenging: ["Name the friction early and keep plans lightweight.","Short, low-stakes hangs help you read it clearly.","If it drains you, step back and reset the tempo."],
+    Unrealistic: ["It’s okay to pass—save energy for better fits.","Wish them well and keep your bar where it belongs.","No need to force a vibe that isn’t there."]
+  };
+
+  const WORDS_SEX = {
+    Likely:      ["spark","heat","electric","magnetic","pull","chemistry","instant","charged","locked-in","fire","clicking","tight vibe"],
+    Match:       ["flirty","promising","playful","easy","casual","fun","good tempo","light","open","tease","curious","game on"],
+    Challenging: ["stop-start","mixed signals","logistics","timing","effort","fizzle risk","awkward","uneven","off tempo","hesitant","stall","cold-hot"],
+    Unrealistic: ["low spark","no pull","flat","forced","dry","off chemistry","cold","no click","different pace","out of sync","hard to start","stuck"]
+  };
+  const TPL_SEX = {
+    Likely: [
+      "The {w1} is instant—energy feels {w2}.",
+      "Strong {w1}; the pull is {w2}.",
+      "{w1} and {w2}—no overthinking needed.",
+      "It’s {w1} from the jump, with a {w2} vibe.",
+      "You’re locked into that {w1}; everything feels {w2}."
+    ],
+    Match: [
+      "Feels {w1}; keep it {w2} and see where it goes.",
+      "A {w1} setup with {w2} momentum.",
+      "{w1} energy—light, {w2}, and easy to explore.",
+      "This is {w1}; pace it {w2}.",
+      "Play it {w1}; the tempo is {w2}."
+    ],
+    Challenging: [
+      "Expect {w1}; the tempo could be {w2}.",
+      "Attraction pops but {w1} make it {w2}.",
+      "There’s {w1} here—keep plans simple or it turns {w2}.",
+      "It feels {w1}; chemistry may go {w2}.",
+      "{w1} signs—watch for a {w2} rhythm."
+    ],
+    Unrealistic: [
+      "It’s {w1}; chemistry stays {w2}.",
+      "{w1} read overall—vibe is {w2}.",
+      "Feels {w1}; likely {w2} if you push it.",
+      "The match is {w1}; momentum stays {w2}.",
+      "Overall {w1}—connection is {w2}."
+    ]
+  };
+  const WHY_SEX = {
+    Likely:      ["Follow the spark—keep logistics light and fun.","Short plans, strong pull; let the vibe lead.","Ride the momentum; don’t over-script."],
+    Match:       ["Keep it playful and low-friction.","Simple plans, clear boundaries—easy wins.","Match the tempo; let curiosity do the work."],
+    Challenging: ["Trim logistics; keep meets short and simple.","If it stalls, reset pace or pass.","Don’t chase mixed signals—protect your energy."],
+    Unrealistic: ["No need to force it—save the effort.","If it’s flat, move on quickly.","Close the tab and look for real spark."]
+  };
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function humanize(band){
+  function humanize(band, intent){
+    const WORDS = intent==="Sex" ? WORDS_SEX : WORDS_LOVE;
+    const TPL   = intent==="Sex" ? TPL_SEX   : TPL_LOVE;
     const words = WORDS[band];
-    const tpl   = pick(TEMPLATES[band]);
+    const tpl   = pick(TPL[band]);
     let w1 = pick(words), w2 = pick(words);
-    // avoid same word twice
     for(let i=0;i<4 && w2===w1;i++) w2 = pick(words);
-    // capitalize first letter nicely
     const sentence = tpl.replace("{w1}", w1).replace("{w2}", w2);
     return sentence.charAt(0).toUpperCase() + sentence.slice(1);
   }
+  function whyLine(band, intent){
+    const WHY = intent==="Sex" ? WHY_SEX : WHY_LOVE;
+    return pick(WHY[band]);
+  }
 
-  // A second line tailored to *why* (soft, non-mathy cues)
-  const WHY = {
-    Likely: [
-      "You notice the good stuff fast—keep the pace natural.",
-      "Lean into shared energy and simple wins.",
-      "Let it breathe; the chemistry is already doing the work."
-    ],
-    Match: [
-      "There’s enough here to explore—small dates, real talk.",
-      "Focus on easy overlap; don’t over-engineer it.",
-      "Keep it steady; curiosity beats intensity."
-    ],
-    Challenging: [
-      "Name the friction early and keep plans lightweight.",
-      "Short, low-stakes hangs help you read it clearly.",
-      "If it drains you, step back and reset the tempo."
-    ],
-    Unrealistic: [
-      "It’s okay to pass—save energy for better fits.",
-      "Wish them well and keep your bar where it belongs.",
-      "No need to force a vibe that isn’t there."
-    ]
-  };
+  // Advice module (modular)
+  function renderAdviceSection(band, intent) {
+    const lineA = humanize(band, intent);
+    const lineB = whyLine(band, intent);
+    const html = `<p style="margin:0">${lineA}</p><p style="margin:8px 0 0 0">${lineB}</p>`;
+    document.getElementById("adviceWrap").innerHTML = html;
+    return { lineA, lineB };
+  }
+  async function copyAdviceToClipboard() {
+    const text = document.getElementById("adviceWrap").innerText.trim();
+    try { await navigator.clipboard.writeText(text); } catch {}
+  }
 
   // ---------- Report ----------
-  function makeReport({me, them, res, finalScore, band, line1, line2}){
+  function makeReport({me, them, res, finalScore, band, line1, line2, intent}){
     const {left,right,score}=res;
     return [
       "Attraction Finder — personal result",
       "Date: "+new Date().toISOString(),
-      "Intent: Love",
+      "Intent: "+intent,
       "",
       `You (${me.gender}, ${me.age}) vs Them (${them.gender}, ${them.age})`,
       `Final Score: ${finalScore} — ${band}`,
@@ -449,7 +517,7 @@
       line1,
       line2,
       "",
-      // Keep technicals minimal but available for power users:
+      // light technicals for power users
       `Raw mutual score: ${score}`,
       `Your view (internal): utility ${(left.utility*100).toFixed(1)}; age ${Math.round(left.ageBase*100)}%; gap ${Math.round(left.dir*100)}%`,
       `Their view (internal): utility ${(right.utility*100).toFixed(1)}; age ${Math.round(right.ageBase*100)}%; gap ${Math.round(right.dir*100)}%`
@@ -460,7 +528,21 @@
   const calcBtn = document.getElementById("calcBtn");
   const reportBtn = document.getElementById("reportBtn");
   const resetBtn = document.getElementById("resetBtn");
+  const modeLoveBtn = document.getElementById("modeLove");
+  const modeSexBtn  = document.getElementById("modeSex");
+  let currentIntent = "Love";
   let lastReport = "";
+
+  modeLoveBtn.addEventListener("click", ()=>{
+    currentIntent = "Love";
+    modeLoveBtn.classList.add("active"); modeLoveBtn.setAttribute("aria-selected","true");
+    modeSexBtn.classList.remove("active"); modeSexBtn.setAttribute("aria-selected","false");
+  });
+  modeSexBtn.addEventListener("click", ()=>{
+    currentIntent = "Sex";
+    modeSexBtn.classList.add("active"); modeSexBtn.setAttribute("aria-selected","true");
+    modeLoveBtn.classList.remove("active"); modeLoveBtn.setAttribute("aria-selected","false");
+  });
 
   resetBtn.addEventListener("click", ()=>{
     document.querySelectorAll("select").forEach(s=>s.selectedIndex=0);
@@ -468,6 +550,9 @@
     document.getElementById("result").hidden = true;
     reportBtn.disabled = true;
     lastReport = "";
+    // reset mode to Love
+    currentIntent = "Love";
+    modeLoveBtn.click();
   });
 
   calcBtn.addEventListener("click", ()=>{
@@ -478,8 +563,8 @@
       alert("Ages must be 18–100."); return;
     }
 
-    const res = mutualMatch(me, them);
-    let finalScore = applyContext(res.score, me, them);
+    const res = mutualMatch(me, them, currentIntent);
+    let finalScore = applyContext(res.score, me, them, currentIntent);
     finalScore = clamp(finalScore, 0, 100);
     const {band, cls} = labelBand(finalScore);
 
@@ -494,16 +579,19 @@
     matchEl.textContent = `${finalScore} / 100`;
     document.getElementById("labelText").textContent = band;
 
-    // Human copy (no numbers)
-    const line1 = humanize(band);
-    const line2 = pick(WHY[band]);
+    // Human copy (mode-aware)
+    const line1 = humanize(band, currentIntent);
+    const line2 = whyLine(band, currentIntent);
     document.getElementById("humanCopy").textContent = line1;
     document.getElementById("humanCopy2").textContent = line2;
 
+    // Advice module (regeneratable)
+    renderAdviceSection(band, currentIntent);
+
     document.getElementById("result").hidden = false;
 
-    // Build downloadable report (light technicals included)
-    lastReport = makeReport({me, them, res, finalScore, band, line1, line2});
+    // Build downloadable report
+    lastReport = makeReport({me, them, res, finalScore, band, line1, line2, intent: currentIntent});
     reportBtn.disabled = false;
   });
 
@@ -514,6 +602,14 @@
     const a = document.createElement("a");
     a.href = url; a.download = "attraction-finder-report.txt"; a.click();
     URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("rerollAdvice").addEventListener("click", ()=>{
+    const band = document.getElementById("labelText").textContent || "Match";
+    renderAdviceSection(band, currentIntent);
+  });
+  document.getElementById("copyAdvice").addEventListener("click", ()=>{
+    copyAdviceToClipboard();
   });
 
   // ---------- seed defaults ----------
@@ -539,6 +635,9 @@
     document.getElementById("pStatus").value = "6";
     document.getElementById("pEmpathy").value = "6";
     document.getElementById("pConfidence").value = "6";
+
+    // default mode = Love
+    modeLoveBtn.click();
   })();
   </script>
 </body>
