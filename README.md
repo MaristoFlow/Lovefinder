@@ -4,7 +4,7 @@
 **Clarity and insight into attraction dynamics.**  
 This web app helps you reflect on your dating or relationship goals by comparing your profile with your desired partner’s profile.
 
-Live demo: [https://maristoflow.github.io/attractionfinder/](https://maristoflow.github.io/attractionfinder/)
+Live demo: [https://maristoflow.github.io/lo efinder/](https://maristoflow.github.io/lovefinder/)
 
 ---
 
