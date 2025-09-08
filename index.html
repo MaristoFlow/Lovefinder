@@ -1,53 +1,78 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>LoveFinder — v3.1</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="LoveFinder — compatibility with A,S,E,C model and safety gate.">
+  <meta charset="utf-8" />
+  <title>Lovefinder — v3.1</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="Lovefinder — A,S,E,C model with asymmetric age effects and human-readable feedback.">
   <style>
-    /* ---------- THEME TOKENS ---------- */
+    /* ================= THEME ================= */
     :root{
-      /* Dark theme (default) */
-      --bg-start:#0d0a1a; --bg-end:#1b1133;
-      --ink:#f8f6fb; --muted:#cbb9da; --line:rgba(255,255,255,.12);
-      --accent:#ff7dab; --accent-2:#b78bfa; --accent-3:#ffd27d;
-      --card-bg:rgba(255,255,255,.06); --card-blur:10px;
+      /* Dark (Black) */
+      --bg-start:#0d0a1a;
+      --bg-end:#1b1133;
+      --ink:#f8f6fb;
+      --muted:#cbb9da;
+      --line:rgba(255,255,255,.14);
+
+      --accent:#ff7dab;   /* rose */
+      --accent-2:#b78bfa; /* lilac */
+      --accent-3:#ffd27d; /* gold */
+
+      --card-bg:rgba(255,255,255,.06);
+      --card-blur:10px;
+
       --good:#79f7c7; --mid:#ffd27d; --warn:#ffb487; --low:#ff8a9e;
-      --field-bg:rgba(255,255,255,.06); --focus-ring:rgba(255,210,125,.55);
-      --pill-bg:rgba(255,255,255,.04);
-      --btn-shadow:0 10px 24px rgba(255,125,171,.28);
+
+      --control-bg:rgba(255,255,255,.06);
+      --control-hover:rgba(255,255,255,.12);
+      --control-ring:rgba(183,139,250,.28);
+      --chip-bg:rgba(255,255,255,.04);
+      --chip-ink:#cbb9da;
+
+      --cta-ink:#1e0e1b;
+      --cta-shadow:0 10px 24px rgba(255,125,171,.28);
     }
     [data-theme="light"]{
-      --bg-start:#fff7fb; --bg-end:#fff; /* soft ivory */
-      --ink:#2b2236; --muted:#6d5b7c; --line:rgba(0,0,0,.12);
-      --accent:#e64686; --accent-2:#7b5cff; --accent-3:#f3b300;
-      --card-bg:rgba(255,255,255,.82); --card-blur:6px;
-      --good:#1f7f62; --mid:#b37500; --warn:#b05a2a; --low:#b03a4f;
-      --field-bg:rgba(0,0,0,.03); --focus-ring:rgba(230,70,134,.35);
-      --pill-bg:rgba(0,0,0,.04);
-      --btn-shadow:0 8px 18px rgba(230,70,134,.25);
+      /* Light (White) */
+      --bg-start:#f6f3fb;
+      --bg-end:#fffefd;
+      --ink:#1b1730;
+      --muted:#6e6791;
+      --line:rgba(0,0,0,.12);
+
+      --accent:#e8518f; --accent-2:#7b58e3; --accent-3:#f2b648;
+
+      --card-bg:rgba(255,255,255,.86);
+      --card-blur:8px;
+
+      --good:#2aa786; --mid:#c58b1a; --warn:#c06a32; --low:#c23c59;
+
+      --control-bg:#ffffff;
+      --control-hover:#f1eefb;
+      --control-ring:rgba(123,88,227,.28);
+      --chip-bg:#f3f0fb;
+      --chip-ink:#6e6791;
+
+      --cta-ink:#ffffff;
+      --cta-shadow:0 10px 20px rgba(123,88,227,.25);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      color:var(--ink);
+      margin:0;color:var(--ink);
+      font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background:
         radial-gradient(1200px 600px at 20% -10%, #2a174e 0%, transparent 60%),
         radial-gradient(1000px 800px at 120% 20%, #432066 0%, transparent 55%),
         linear-gradient(180deg, var(--bg-start), var(--bg-end));
       position:relative; overflow-x:hidden;
     }
-    [data-theme="light"] body{
-      background:
-        radial-gradient(1400px 700px at -10% -10%, #ffe3f0 0%, transparent 55%),
-        radial-gradient(1100px 800px at 120% 10%, #efe9ff 0%, transparent 60%),
-        linear-gradient(180deg, var(--bg-start), var(--bg-end));
+    [data-theme="light"] body, [data-theme="light"]{
+      background:linear-gradient(180deg, var(--bg-start), var(--bg-end));
     }
 
-    /* Subtle animated sparkles (on good outcomes) */
     .sparkle{
       pointer-events:none; position:fixed; inset:0;
       background:
@@ -56,31 +81,27 @@
         radial-gradient(2px 2px at 70% 30%, rgba(255,218,185,.8), transparent 60%),
         radial-gradient(2px 2px at 85% 60%, rgba(255,192,203,.7), transparent 60%),
         radial-gradient(3px 3px at 50% 50%, rgba(255,255,255,.5), transparent 60%);
-      mix-blend-mode:screen; opacity:.0; transition:opacity .8s ease; animation:twinkle 6s linear infinite;
+      mix-blend-mode:screen; opacity:.0; transition:opacity .8s ease;
+      animation:twinkle 6s linear infinite;
     }
-    [data-theme="light"] .sparkle{ mix-blend-mode:normal; }
-    @keyframes twinkle{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-    body.celebrate .sparkle{ opacity:.6 }
+    @keyframes twinkle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .celebrate .sparkle{ opacity:.55 }
+    [data-theme="light"] .celebrate .sparkle{ opacity:.30 }
 
-    header{text-align:center;padding:24px 16px}
+    header{text-align:center;padding:26px 16px}
     header h1{
       margin:0; font-size:1.8rem; letter-spacing:.3px;
       background:linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
       -webkit-background-clip:text; background-clip:text; color:transparent;
     }
-    header .topbar{margin-top:14px; display:flex; justify-content:center; gap:10px; align-items:center}
-    .seg{display:inline-flex; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--field-bg)}
-    .seg button{
-      background:transparent; color:var(--ink); padding:8px 14px; border:0; cursor:pointer; font-weight:700;
-    }
-    .seg button.active{ background:var(--accent); color:#fff }
-    .small{font-size:.95rem;color:var(--muted)}
+    header p{margin:8px 0 0;color:var(--muted)}
 
     main{max-width:960px;margin:0 auto;padding:16px;display:grid;gap:16px}
+
     .card{
       background:var(--card-bg); border:1px solid var(--line); border-radius:18px; padding:16px;
       backdrop-filter:blur(var(--card-blur));
-      box-shadow:0 10px 30px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.06);
+      box-shadow:0 10px 30px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
     }
     .section-title{margin:.2rem 0 .8rem 0}
 
@@ -90,27 +111,26 @@
 
     label{font-size:.92rem;color:var(--muted);display:block;margin-bottom:6px}
     select,input[type="number"]{
-      width:100%;padding:12px;border-radius:12px;
-      border:1px solid var(--line); background:var(--field-bg); color:var(--ink);
-      outline:none; transition:box-shadow .2s ease, border-color .2s ease;
+      width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);
+      background:var(--control-bg); color:var(--ink); outline:none;
+      transition:box-shadow .2s ease, border-color .2s ease, background .2s ease;
     }
     select:focus,input[type="number"]:focus{
-      border-color:rgba(0,0,0,.18);
-      box-shadow:0 0 0 3px var(--focus-ring);
+      border-color:rgba(255,255,255,.28);
+      box-shadow:0 0 0 3px var(--control-ring);
     }
 
     .pill{
-      display:inline-block;padding:6px 12px;border-radius:999px;
-      border:1px solid var(--line); color:var(--muted); font-size:.85rem;
-      margin:6px 8px 10px 0; background:var(--pill-bg)
+      display:inline-block;padding:6px 12px;border-radius:999px;border:1px solid var(--line);
+      color:var(--chip-ink); font-size:.85rem; margin:6px 8px 10px 0; background:var(--chip-bg)
     }
+    .small{font-size:.95rem;color:var(--muted)}
 
-    .score{font-size:2.4rem;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 0 rgba(0,0,0,.15)}
+    .score{font-size:2.4rem;font-weight:900;letter-spacing:.5px;text-shadow:0 1px 0 rgba(0,0,0,.2)}
     .match-likely{color:var(--good)}
     .match-match{color:var(--mid)}
     .match-chal{color:var(--warn)}
     .match-unre{color:var(--low)}
-
     hr{border:0;border-top:1px solid var(--line);margin:16px 0}
 
     .blurb{
@@ -118,46 +138,70 @@
       border:1px solid var(--line); border-radius:14px; padding:12px; line-height:1.5;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
     }
-    [data-theme="light"] .blurb{
-      background:linear-gradient(180deg, rgba(0,0,0,.03), rgba(0,0,0,.01));
+
+    /* Theme toggle segment */
+    .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--control-bg)}
+    .seg button{background:transparent;color:var(--ink);padding:10px 14px;border:0;cursor:pointer}
+    .seg button.active{background:linear-gradient(90deg, var(--accent), var(--accent-2));color:#fff}
+
+    /* Number pickers for classes 1–10 */
+    .num-card .legend{color:var(--muted);font-size:.9rem;margin:2px 0 10px}
+    .num-grid{display:grid;grid-template-columns:repeat(10, minmax(34px,1fr));gap:6px}
+    .num-grid button{
+      border:1px solid var(--line); border-radius:10px; padding:8px 0; background:var(--control-bg);
+      color:var(--ink); cursor:pointer; transition:transform .05s ease, background .15s ease, border-color .15s ease;
+    }
+    .num-grid button:hover{background:var(--control-hover)}
+    .num-grid button:active{transform:translateY(1px)}
+    .num-grid button.active{
+      background:linear-gradient(90deg,var(--accent),var(--accent-2),var(--accent-3));
+      color:var(--cta-ink); border-color:transparent;
     }
 
+    /* CTA with ready-state color */
     .cta-wrap{display:flex;justify-content:center}
     .cta{
-      display:inline-block;min-width:260px;padding:16px 22px;border-radius:14px;font-weight:800;
-      border:0; cursor:pointer; font-size:1.05rem; color:#1e0e1b;
+      display:inline-block;min-width:260px;padding:16px 22px;border-radius:14px;font-weight:800;border:0;cursor:pointer;font-size:1.05rem;
+      color:var(--cta-ink);
       background:linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
-      background-size:200% 100%; box-shadow:var(--btn-shadow);
-      transition:transform .08s ease, filter .15s ease, background-position .8s ease;
+      background-size:200% 100%; box-shadow:var(--cta-shadow);
+      transition:transform .08s ease, filter .15s ease, background-position .8s ease, opacity .2s ease;
+      opacity:.55; /* not ready */
     }
+    .cta.ready{ opacity:1 }
     .cta:hover{filter:brightness(.97); background-position:100% 0}
     .cta:active{transform:translateY(1px)}
 
     footer{max-width:960px;margin:0 auto;padding:18px 16px;color:var(--muted);text-align:center;font-size:.9rem}
 
-    :focus{outline:2px solid var(--focus-ring);outline-offset:2px}
+    /* Accessibility focus */
+    :focus{outline:2px solid rgba(123,88,227,.45);outline-offset:2px}
+    .visually-hidden{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   </style>
 </head>
-<body>
+<body data-theme="dark">
   <div class="sparkle" aria-hidden="true"></div>
 
   <header>
-    <h1>LoveFinder</h1>
-    <!-- Theme toggle -->
-    <div class="topbar" aria-label="Theme">
-      <span class="small">Theme</span>
-      <div class="seg" role="tablist" aria-label="Theme toggle">
-        <button id="themeDark" class="active" role="tab" aria-selected="true">Dark</button>
-        <button id="themeLight" role="tab" aria-selected="false">Light</button>
-      </div>
-    </div>
+    <h1>Lovefinder</h1>
+    <p>Set your profiles, pick class levels, then calculate.</p>
   </header>
 
+  <!-- THEME TOGGLE -->
+  <section class="card" aria-label="Theme">
+    <div style="display:flex;justify-content:center;align-items:center;gap:12px">
+      <span class="small">Background</span>
+      <div class="seg" role="tablist" aria-label="Background theme">
+        <button id="themeDark" class="active" role="tab" aria-selected="true">Black</button>
+        <button id="themeLight" role="tab" aria-selected="false">White</button>
+      </div>
+    </div>
+  </section>
+
   <main>
-    <!-- YOUR PROFILE -->
+    <!-- YOUR PROFILE (bio only, cleaner) -->
     <section class="card" aria-labelledby="you-title">
       <h2 id="you-title" class="section-title">Your Profile</h2>
-
       <div class="grid two">
         <div>
           <label for="gender">Gender</label>
@@ -173,59 +217,50 @@
           <input id="age" type="number" min="18" max="100" placeholder="e.g. 35" inputmode="numeric">
         </div>
       </div>
-
-      <div class="grid two">
+      <div class="grid two" style="margin-top:10px">
         <div>
           <label for="background">Background</label>
           <select id="background">
             <option value="">-- Select --</option>
-            <option>Upper</</option>
+            <option>Upper</option>
             <option>Middle</option>
             <option>Lower</option>
           </select>
         </div>
-        <div>
-          <label for="origin">Lifestyle Origin</label>
-          <select id="origin">
-            <option value="">-- Select --</option>
-            <option>Family-Oriented</option>
-            <option>Career-Oriented</option>
-          </select>
-        </div>
       </div>
+    </section>
 
+    <!-- YOUR CLASSES -->
+    <section class="card num-card" aria-labelledby="you-classes-title">
+      <h2 id="you-classes-title" class="section-title">Your Classes (1–10)</h2>
+      <div class="legend">Tap to set levels.</div>
       <div class="grid two">
         <div>
-          <label for="kids">Have children</label>
-          <select id="kids">
-            <option>None</option>
-            <option>Part-time custody</option>
-            <option>Full-time custody</option>
-          </select>
+          <label>Appearance</label>
+          <div id="pick-appearance" class="num-grid" data-for="appearance"></div>
+          <select id="appearance" class="visually-hidden"></select>
         </div>
         <div>
-          <label for="wantKids">Want children</label>
-          <select id="wantKids">
-            <option>Yes</option>
-            <option>No</option>
-            <option>Maybe</option>
-            <option>Later</option>
-          </select>
+          <label>Status</label>
+          <div id="pick-status" class="num-grid" data-for="status"></div>
+          <select id="status" class="visually-hidden"></select>
         </div>
-      </div>
-
-      <div class="grid two" style="margin-top:12px">
-        <div><label for="appearance">Appearance</label><select id="appearance"></select></div>
-        <div><label for="status">Status</label><select id="status"></select></div>
-        <div><label for="confidence">Confidence</label><select id="confidence"></select></div>
-        <div><label for="empathy">Empathy</label><select id="empathy"></select></div>
+        <div>
+          <label>Confidence</label>
+          <div id="pick-confidence" class="num-grid" data-for="confidence"></div>
+          <select id="confidence" class="visually-hidden"></select>
+        </div>
+        <div>
+          <label>Empathy</label>
+          <div id="pick-empathy" class="num-grid" data-for="empathy"></div>
+          <select id="empathy" class="visually-hidden"></select>
+        </div>
       </div>
     </section>
 
     <!-- PARTNER PROFILE -->
     <section class="card" aria-labelledby="partner-title">
       <h2 id="partner-title" class="section-title">Desired Partner</h2>
-
       <div class="grid two">
         <div>
           <label for="pGender">Gender</label>
@@ -241,8 +276,7 @@
           <input id="pAge" type="number" min="18" max="100" placeholder="e.g. 28" inputmode="numeric">
         </div>
       </div>
-
-      <div class="grid two">
+      <div class="grid two" style="margin-top:10px">
         <div>
           <label for="pBackground">Background</label>
           <select id="pBackground">
@@ -252,49 +286,43 @@
             <option>Lower</option>
           </select>
         </div>
-        <div>
-          <label for="pOrigin">Lifestyle Origin</label>
-          <select id="pOrigin">
-            <option value="">-- Select --</option>
-            <option>Family-Oriented</option>
-            <option>Career-Oriented</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid two">
-        <div>
-          <label for="pKids">Have children</label>
-          <select id="pKids">
-            <option>None</option>
-            <option>Part-time custody</option>
-            <option>Full-time custody</option>
-          </select>
-        </div>
-        <div>
-          <label for="pWantKids">Want children</label>
-          <select id="pWantKids">
-            <option>Yes</option>
-            <option>No</option>
-            <option>Maybe</option>
-            <option>Later</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid two" style="margin-top:12px">
-        <div><label for="pAppearance">Appearance</label><select id="pAppearance"></select></div>
-        <div><label for="pStatus">Status</label><select id="pStatus"></select></div>
-        <div><label for="pConfidence">Confidence</label><select id="pConfidence"></select></div>
-        <div><label for="pEmpathy">Empathy</label><select id="pEmpathy"></select></div>
       </div>
     </section>
 
-    <!-- Calculate -->
+    <!-- PARTNER CLASSES -->
+    <section class="card num-card" aria-labelledby="p-classes-title">
+      <h2 id="p-classes-title" class="section-title">Partner Classes (1–10)</h2>
+      <div class="legend">Tap to set desired levels.</div>
+      <div class="grid two">
+        <div>
+          <label>Appearance</label>
+          <div id="pick-pAppearance" class="num-grid" data-for="pAppearance"></div>
+          <select id="pAppearance" class="visually-hidden"></select>
+        </div>
+        <div>
+          <label>Status</label>
+          <div id="pick-pStatus" class="num-grid" data-for="pStatus"></div>
+          <select id="pStatus" class="visually-hidden"></select>
+        </div>
+        <div>
+          <label>Confidence</label>
+          <div id="pick-pConfidence" class="num-grid" data-for="pConfidence"></div>
+          <select id="pConfidence" class="visually-hidden"></select>
+        </div>
+        <div>
+          <label>Empathy</label>
+          <div id="pick-pEmpathy" class="num-grid" data-for="pEmpathy"></div>
+          <select id="pEmpathy" class="visually-hidden"></select>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACTIONS -->
     <section class="card" aria-label="Actions">
       <div class="cta-wrap">
-        <button id="calcBtn" class="cta">Calculate</button>
+        <button id="calcBtn" class="cta" aria-label="Calculate">Calculate</button>
       </div>
+      <div class="small" style="text-align:center;margin-top:8px">Button brightens when all required choices are set.</div>
     </section>
 
     <!-- RESULTS -->
@@ -315,230 +343,49 @@
     </section>
   </main>
 
-  <footer></footer>
+  <footer>
+    v3.1 — Black/White toggle, simplified fields, class pickers, ready-state calculate.
+  </footer>
 
   <script>
-  // ---------- helpers ----------
+  // --------- helpers ----------
+  const $ = (id)=>document.getElementById(id);
+  const val=(id)=>{const el=$(id);return el?String(el.value||"").trim():"";};
+  const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+  function num(id,min=1,max=10){const s=val(id);const x=parseInt(s,10);if(isNaN(x))return 0;return Math.max(min,Math.min(max,x));}
+
+  // Fill 1..10 into hidden selects
   function fill10(id){
-    const el=document.getElementById(id);
+    const el=$(id);
     el.innerHTML = '<option value="">--</option>' + Array.from({length:10},(_,i)=>`<option>${i+1}</option>`).join('');
   }
   ["appearance","status","confidence","empathy","pAppearance","pStatus","pConfidence","pEmpathy"].forEach(fill10);
 
-  const val=(id)=>{const el=document.getElementById(id);return el?String(el.value||"").trim():"";};
-  function num(id,min=1,max=10){const s=val(id);const x=parseInt(s,10);if(isNaN(x))return 0;return Math.max(min,Math.min(max,x));}
-  const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+  // Build number pickers
+  function buildPicker(containerId){
+    const c=$(containerId);
+    const selectId=c.getAttribute("data-for");
+    c.innerHTML = Array.from({length:10},(_,i)=>`<button type="button" data-val="${i+1}">${i+1}</button>`).join('');
+    c.addEventListener("click",(e)=>{
+      const b=e.target.closest("button"); if(!b) return;
+      const v=b.getAttribute("data-val");
+      // update active state
+      c.querySelectorAll("button").forEach(x=>x.classList.toggle("active", x===b));
+      // set hidden select
+      $(selectId).value = v;
+      updateReady();
+    });
+  }
+  ["pick-appearance","pick-status","pick-confidence","pick-empathy",
+   "pick-pAppearance","pick-pStatus","pick-pConfidence","pick-pEmpathy"].forEach(buildPicker);
 
-  // ---------- Theme toggle ----------
-  const htmlEl = document.documentElement;
-  const themeDarkBtn = document.getElementById("themeDark");
-  const themeLightBtn = document.getElementById("themeLight");
-
+  // --------- THEME TOGGLE ----------
+  const themeDarkBtn = $("themeDark");
+  const themeLightBtn= $("themeLight");
   function setTheme(mode){
-    htmlEl.setAttribute("data-theme", mode);
-    if(mode==="dark"){
-      themeDarkBtn.classList.add("active"); themeDarkBtn.setAttribute("aria-selected","true");
-      themeLightBtn.classList.remove("active"); themeLightBtn.setAttribute("aria-selected","false");
-    }else{
-      themeLightBtn.classList.add("active"); themeLightBtn.setAttribute("aria-selected","true");
-      themeDarkBtn.classList.remove("active"); themeDarkBtn.setAttribute("aria-selected","false");
-    }
-  }
-  themeDarkBtn.addEventListener("click", ()=>setTheme("dark"));
-  themeLightBtn.addEventListener("click", ()=>setTheme("light"));
-
-  // ---------- Model (Love-only) ----------
-  const WEIGHTS = {
-    "Female": { appearance:0.23, status:0.38, empathy:0.12, confidence:0.27 },
-    "Male":   { appearance:0.46, status:0.12, empathy:0.22, confidence:0.20 },
-    "Other/Unspecified": { appearance:0.30, status:0.25, empathy:0.25, confidence:0.20 }
-  };
-
-  function baseAgeCurve(age){
-    const midLift = (age>=30 && age<=45) ? 1.05 : 1.0;
-    const seniorFall = age>55 ? Math.max(0.75, 1 - (age-55)*0.01) : 1.0;
-    return midLift*seniorFall;
-  }
-
-  function traitUtility(person, weights){
-    const s=(k)=>clamp(person.traits[k],1,10);
-    const raw = weights.appearance*s("appearance")
-              + weights.status*s("status")
-              + weights.empathy*s("empathy")
-              + weights.confidence*s("confidence");
-    return raw/10;
-  }
-
-  function directionalGapMultiplier(evaluatorGender, evalAge, targetAge, targetUtility10){
-    const gap = targetAge - evalAge;
-    const opener = targetUtility10 >= 9 ? 0.5 : (targetUtility10>=8.5 ? 0.65 : 1.0);
-    const abs = Math.abs(gap);
-    let mult = 1.0;
-    if(evaluatorGender==="Female"){
-      if(gap>0){ if(abs<=4) mult=1.08; else if(abs<=12) mult=1.0; else mult=1.0-Math.min(0.35,(abs-12)*0.03); }
-      else if(gap<0){ if(abs<=2) mult=0.98; else if(abs<=8) mult=0.9; else mult=1.0-Math.min(0.45,(abs-8)*0.04); }
-    } else if(evaluatorGender==="Male"){
-      if(gap<0){ if(abs<=8) mult=1.06; else if(abs<=12) mult=1.0; else mult=1.0-Math.min(0.30,(abs-12)*0.025); }
-      else if(gap>0){ if(abs<=6) mult=0.98; else if(abs<=12) mult=0.92; else mult=1.0-Math.min(0.40,(abs-12)*0.03); }
-    } else {
-      if(abs<=12) mult=1.0; else mult=1.0 - Math.min(0.35,(abs-12)*0.025);
-    }
-    return 1.0 - (1.0 - mult)*opener;
-  }
-
-  function sideFit(evaluator, target){
-    const w = WEIGHTS[evaluator.gender] || WEIGHTS["Other/Unspecified"];
-    const utility = traitUtility(target, w);
-    const ageBase = baseAgeCurve(target.age);
-    const dir = directionalGapMultiplier(evaluator.gender, evaluator.age, target.age, utility*10);
-    return { fit: clamp(utility*ageBase*dir,0,1), utility, ageBase, dir, weights:w };
-  }
-
-  function mutualMatch(a,b){
-    const left = sideFit(a,b);
-    const right= sideFit(b,a);
-    const score = Math.round(Math.sqrt(left.fit*right.fit)*100);
-    return { score, left, right };
-  }
-
-  function labelBand(score){
-    if(score>=70) return {band:"Likely", cls:"match-likely"};
-    if(score>=60) return {band:"Match", cls:"match-match"};
-    if(score>=45) return {band:"Challenging", cls:"match-chal"};
-    return {band:"Unrealistic", cls:"match-unre"};
-  }
-
-  // ---------- Context (Love-only) ----------
-  function contextModifier(you, partner){
-    let mod=0;
-    const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
-    const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
-
-    if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
-    if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
-    if(yK==="full-time custody" && pK==="none") mod+=2;
-    if(pK==="full-time custody" && yK==="none") mod+=2;
-    if(yK!=="none" && pK!=="none") mod-=1;
-
-    const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
-    if(yb && pb){
-      if(yb===pb){ mod -= (yb==="upper"?2: yb==="middle"?1:0); }
-      else { if((yb==="upper"&&pb==="lower")||(yb==="lower"&&pb==="upper")) mod+=2; else mod+=1; }
-    }
-
-    const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
-    if(yo && po){ mod += (yo===po? -1 : 1); }
-
-    const gap=Math.abs(you.age-partner.age);
-    if(gap>=20) mod+=6; else if(gap>=15) mod+=3; else if(gap>=10) mod+=1;
-    return mod;
-  }
-  function applyContext(score, you, partner){
-    const mod = contextModifier(you, partner);
-    const damp = Math.max(0.6, 1 - mod*0.02);
-    return Math.round(score*damp);
-  }
-
-  // ---------- LUDACRIS gate (Love) ----------
-  const LUDACRIS = { gapUnder25:30, teenVsOlder:40, extreme70v25:true, delta:12, deltaAge:15 };
-  function isLudacris(you, partner){
-    const gap = Math.abs(you.age - partner.age);
-    const targetUnder25 = partner.age < 25;
-    const targetTeen = partner.age <= 19;
-    const seeker70plus = you.age >= 70;
-
-    const wantTotal = (partner.traits.appearance + partner.traits.status + partner.traits.empathy + partner.traits.confidence);
-    const haveTotal = (you.traits.appearance + you.traits.status + you.traits.empathy + you.traits.confidence);
-    const demandDelta = wantTotal - haveTotal;
-
-    if (targetUnder25 && gap >= LUDACRIS.gapUnder25) return true;
-    if (targetTeen && you.age >= LUDACRIS.teenVsOlder) return true;
-    if (seeker70plus && partner.age <= 25 && LUDACRIS.extreme70v25) return true;
-    if (demandDelta >= LUDACRIS.delta && (you.age - partner.age) >= LUDACRIS.deltaAge) return true;
-    return false;
-  }
-
-  // ---------- IO ----------
-  function readPerson(prefix){
-    if(prefix==="p"){
-      return {
-        gender: val("pGender") || "Other/Unspecified",
-        age: parseInt(val("pAge"),10) || 0,
-        traits: {
-          appearance: num("pAppearance")||5,
-          status:     num("pStatus")||5,
-          empathy:    num("pEmpathy")||5,
-          confidence: num("pConfidence")||5,
-        },
-        background: val("pBackground") || "",
-        origin:     val("pOrigin") || "",
-        kids:       val("pKids") || "None",
-        wantKids:   val("pWantKids") || "Maybe",
-      };
-    }
-    return {
-      gender: val("gender") || "Other/Unspecified",
-      age: parseInt(val("age"),10) || 0,
-      traits: {
-        appearance: num("appearance")||5,
-        status:     num("status")||5,
-        empathy:    num("empathy")||5,
-        confidence: num("confidence")||5,
-      },
-      background: val("background") || "",
-      origin:     val("origin") || "",
-      kids:       val("kids") || "None",
-      wantKids:   val("wantKids") || "Maybe",
-    };
-  }
-
-  // ---------- Human-language (Love only) ----------
-  const WORDS_LOVE = {
-    Likely:      ["spark","flow","green light","synergy","aligned","smooth","locked-in","momentum","chemistry","strong fit","solid base","clicking"],
-    Match:       ["promising","workable","steady","balanced","real shot","doable","potential","growing","explore","on track","worth it","solid chance"],
-    Challenging: ["hurdles","friction","effort","rough edges","obstacles","heavy lift","uphill","bumpy","shaky","tension","patchy","mixed signals"],
-    Unrealistic: ["off-track","mismatch","clash","low vibe","unlikely","disconnect","far apart","gap","no flow","hard to click","out of sync","different lanes"]
-  };
-  const TPL_LOVE = {
-    Likely: [
-      "The {w1} is obvious and things feel {w2}.",
-      "This looks like a {w1}—real {w2} and easy momentum.",
-      "You’re {w1} and the vibe is {w2}.",
-      "Strong {w1}; connection feels {w2} from the start.",
-      "{w1} energy with a {w2} path forward."
-    ],
-    Match: [
-      "Feels {w1}—a {w2} path if you nurture it.",
-      "A {w1} setup with {w2} potential.",
-      "This is {w1}; give it time and {w2}.",
-      "{w1} overall, with a {w2} chance to grow.",
-      "A {w1} match that’s {w2} to build on."
-    ],
-    Challenging: [
-      "There are {w1}; expect a {w2} road.",
-      "Attraction is there, but {w1} make it {w2}.",
-      "Some {w1} ahead—could be {w2} without alignment.",
-      "It’s {w1} right now; progress may feel {w2}.",
-      "You’ll meet {w1}; keep expectations {w2}."
-    ],
-    Unrealistic: [
-      "The vibe feels {w1}—chemistry is {w2}.",
-      "This reads {w1}, with {w2} energy.",
-      "You’re {w1}; connection will be {w2}.",
-      "{w1} signals here—things may stay {w2}.",
-      "Overall {w1}; likely {w2} for now."
-    ]
-  };
-  const WHY_LOVE = {
-    Likely:      ["You notice the good stuff fast—keep the pace natural.","Lean into shared energy and simple wins.","Let it breathe; the chemistry is already doing the work."],
-    Match:       ["There’s enough here to explore—small dates, real talk.","Focus on easy overlap; don’t over-engineer it.","Keep it steady; curiosity beats intensity."],
-    Challenging: ["Name the friction early and keep plans lightweight.","Short, low-stakes hangs help you read it clearly.","If it drains you, step back and reset the tempo."],
-    Unrealistic: ["It’s okay to pass—save energy for better fits.","Wish them well and keep your bar where it belongs.","No need to force a vibe that isn’t there."]
-  };
-
-  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function humanize(band){
-    const words = WORDS_LOVE[band];
-    const tpl   = pick(TPL_LOVE[band]);
-    let w1 = pick(words), w2 = pick(words);
-    for(let i
+    document.documentElement.setAttribute("data-theme", mode==="light"?"light":"dark");
+    themeDarkBtn.classList.toggle("active", mode!=="light");
+    themeLightBtn.classList.toggle("active", mode==="light");
+    themeDarkBtn.setAttribute("aria-selected", mode!=="light");
+    themeLightBtn.setAttribute("aria-selected", mode==="light");
+    localStorage.setItem("lovefinder-theme", m
