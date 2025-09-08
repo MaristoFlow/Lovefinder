@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Attraction Finder — v2.9 (Clean Top Toggle + Solo Calculate)</title>
+  <title>LoveFinder — v3.0 (Single Mode + Ludacris Gate)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Attraction Finder — Love/Sex predictor with A,S,E,C model, asymmetric age effects, and human-first feedback.">
+  <meta name="description" content="LoveFinder — love compatibility with A,S,E,C model, asymmetric age effects, and human-first feedback.">
   <style>
     :root{
       --bg:#0f1115;--card:#171a21;--ink:#e9edf5;--muted:#aab2c0;--accent:#7aa2ff;--line:#232838;
@@ -25,10 +25,6 @@
     select,input[type="number"]{
       width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f131b;color:var(--ink)
     }
-    .seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0f131b}
-    .seg button{background:transparent;color:var(--ink);padding:10px 14px;border:0;cursor:pointer}
-    .seg button.active{background:var(--accent);color:#fff}
-    .topbar{display:flex;justify-content:center;align-items:center;gap:12px}
     .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:.85rem;margin:6px 8px 10px 0}
     .small{font-size:.95rem;color:var(--muted)}
     .score{font-size:2.2rem;font-weight:900;letter-spacing:.5px}
@@ -51,20 +47,9 @@
 </head>
 <body>
   <header>
-    <h1>Attraction Finder — v2.9</h1>
-    <p>Love or Sex mode. Human-first feedback. No math goggles.</p>
+    <h1>LoveFinder — v3.0</h1>
+    <p>Love mode only. Human-first feedback. LUDACRIS protection.</p>
   </header>
-
-  <!-- Top Mode Toggle -->
-  <section class="card" aria-label="Mode">
-    <div class="topbar">
-      <span class="small">Mode</span>
-      <div class="seg" role="tablist">
-        <button id="modeLove" class="active" role="tab" aria-selected="true">Love</button>
-        <button id="modeSex" role="tab" aria-selected="false">Sex</button>
-      </div>
-    </div>
-  </section>
 
   <main>
     <!-- YOUR PROFILE -->
@@ -203,7 +188,7 @@
       </div>
     </section>
 
-    <!-- Solo Calculate -->
+    <!-- Calculate -->
     <section class="card" aria-label="Actions">
       <div class="cta-wrap">
         <button id="calcBtn" class="cta">Calculate</button>
@@ -222,7 +207,6 @@
         <hr>
         <div id="humanCopy" class="blurb"></div>
         <div id="humanCopy2" class="blurb" style="margin-top:8px"></div>
-
         <hr>
         <div id="adviceWrap" class="blurb"></div>
       </div>
@@ -230,7 +214,7 @@
   </main>
 
   <footer>
-    v2.9 — Top toggle, solo Calculate. Human-first copy for Love & Sex.
+    v3.0 — Love-only. LUDACRIS gate. One-click calculate with duplicate guard.
   </footer>
 
   <script>
@@ -245,25 +229,13 @@
   function num(id,min=1,max=10){const s=val(id);const x=parseInt(s,10);if(isNaN(x))return 0;return Math.max(min,Math.min(max,x));}
   const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 
-  // ---------- model ----------
+  // ---------- Love-only model ----------
+  // Per-evaluator-gender weights (sum=1). No intent deltas (sex removed).
   const WEIGHTS = {
     "Female": { appearance:0.23, status:0.38, empathy:0.12, confidence:0.27 },
     "Male":   { appearance:0.46, status:0.12, empathy:0.22, confidence:0.20 },
     "Other/Unspecified": { appearance:0.30, status:0.25, empathy:0.25, confidence:0.20 }
   };
-  const INTENT_DELTA = {
-    "Love": { empathy:+0.06, status:+0.02, appearance:-0.04, confidence:-0.04 },
-    "Sex":  { appearance:+0.08, confidence:+0.04, empathy:-0.08, status:-0.04 }
-  };
-
-  function mixWeights(base, intent){
-    const delta = INTENT_DELTA[intent];
-    const mixed = {...base};
-    for(const k of Object.keys(delta)){ mixed[k] = Math.max(0.05,(mixed[k]??0)+delta[k]); }
-    const sum = Object.values(mixed).reduce((a,b)=>a+b,0);
-    for(const k of Object.keys(mixed)){ mixed[k] = mixed[k]/sum; }
-    return mixed;
-  }
 
   function baseAgeCurve(age){
     const midLift = (age>=30 && age<=45) ? 1.05 : 1.0;
@@ -277,7 +249,7 @@
               + weights.status*s("status")
               + weights.empathy*s("empathy")
               + weights.confidence*s("confidence");
-    return raw/10;
+    return raw/10; // normalize 0..1
   }
 
   function directionalGapMultiplier(evaluatorGender, evalAge, targetAge, targetUtility10){
@@ -297,17 +269,17 @@
     return 1.0 - (1.0 - mult)*opener;
   }
 
-  function sideFit(evaluator, target, intent){
-    const w = mixWeights(WEIGHTS[evaluator.gender], intent);
+  function sideFit(evaluator, target){
+    const w = WEIGHTS[evaluator.gender] || WEIGHTS["Other/Unspecified"];
     const utility = traitUtility(target, w);
     const ageBase = baseAgeCurve(target.age);
     const dir = directionalGapMultiplier(evaluator.gender, evaluator.age, target.age, utility*10);
     return { fit: clamp(utility*ageBase*dir,0,1), utility, ageBase, dir, weights:w };
   }
 
-  function mutualMatch(a,b,intent){
-    const left = sideFit(a,b,intent);
-    const right= sideFit(b,a,intent);
+  function mutualMatch(a,b){
+    const left = sideFit(a,b);
+    const right= sideFit(b,a);
     const score = Math.round(Math.sqrt(left.fit*right.fit)*100);
     return { score, left, right };
   }
@@ -319,40 +291,55 @@
     return {band:"Unrealistic", cls:"match-unre"};
   }
 
-  // ---------- context ----------
-  function contextModifier(you, partner, intent){
-    const sexMode = (intent==="Sex");
+  // ---------- Context (Love-only) ----------
+  function contextModifier(you, partner){
     let mod=0;
     const yK=(you.kids||"").toLowerCase(), pK=(partner.kids||"").toLowerCase();
     const yW=(you.wantKids||"").toLowerCase(), pW=(partner.wantKids||"").toLowerCase();
 
-    if(!sexMode){ // Love
-      if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
-      if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
-      if(yK==="full-time custody" && pK==="none") mod+=2;
-      if(pK==="full-time custody" && yK==="none") mod+=2;
-      if(yK!=="none" && pK!=="none") mod-=1;
-    } else { // Sex
-      if(yK==="full-time custody"||pK==="full-time custody") mod+=2;
-    }
+    if((yW==="yes"&&pW==="no")||(yW==="no"&&pW==="yes")) mod+=8;
+    if((yW==="yes"&&pW==="later")||(yW==="later"&&pW==="yes")) mod+=3;
+    if(yK==="full-time custody" && pK==="none") mod+=2;
+    if(pK==="full-time custody" && yK==="none") mod+=2;
+    if(yK!=="none" && pK!=="none") mod-=1;
 
     const yb=(you.background||"").toLowerCase(), pb=(partner.background||"").toLowerCase();
     if(yb && pb){
       if(yb===pb){ mod -= (yb==="upper"?2: yb==="middle"?1:0); }
-      else { if((yb==="upper"&&pb==="lower")||(yb==="lower"&&pb==="upper")) mod+= (sexMode?1:2); else mod+= (sexMode?0:1); }
+      else { if((yb==="upper"&&pb==="lower")||(yb==="lower"&&pb==="upper")) mod+=2; else mod+=1; }
     }
 
     const yo=(you.origin||"").toLowerCase(), po=(partner.origin||"").toLowerCase();
-    if(yo && po){ mod += (yo===po? -1 : (sexMode?0:1)); }
+    if(yo && po){ mod += (yo===po? -1 : 1); }
 
     const gap=Math.abs(you.age-partner.age);
     if(gap>=20) mod+=6; else if(gap>=15) mod+=3; else if(gap>=10) mod+=1;
     return mod;
   }
-  function applyContext(score, you, partner, intent){
-    const mod = contextModifier(you, partner, intent);
+  function applyContext(score, you, partner){
+    const mod = contextModifier(you, partner);
     const damp = Math.max(0.6, 1 - mod*0.02);
     return Math.round(score*damp);
+  }
+
+  // ---------- LUDACRIS gate (Love) ----------
+  const LUDACRIS = { gapUnder25:30, teenVsOlder:40, extreme70v25:true, delta:12, deltaAge:15 };
+
+  function isLudacris(you, partner){
+    const gap = Math.abs(you.age - partner.age);
+    const targetUnder25 = partner.age < 25;
+    const targetTeen = partner.age <= 19;
+    const seeker70plus = you.age >= 70;
+
+    const wantTotal = (partner.traits.appearance + partner.traits.status + partner.traits.empathy + partner.traits.confidence);
+    const haveTotal = (you.traits.appearance + you.traits.status + you.traits.empathy + you.traits.confidence);
+    const demandDelta = wantTotal - haveTotal;
+
+    if (targetUnder25 && gap >= LUDACRIS.gapUnder25) return true;
+    if (targetTeen && you.age >= LUDACRIS.teenVsOlder) return true;
+    if (seeker70plus && partner.age <= 25 && LUDACRIS.extreme70v25) return true;
+    if (demandDelta >= LUDACRIS.delta && (you.age - partner.age) >= LUDACRIS.deltaAge) return true;
+    return false;
   }
 
   // ---------- IO ----------
@@ -389,7 +376,7 @@
     };
   }
 
-  // ---------- Human-language generators ----------
+  // ---------- Human-language (Love only) ----------
   const WORDS_LOVE = {
     Likely:      ["spark","flow","green light","synergy","aligned","smooth","locked-in","momentum","chemistry","strong fit","solid base","clicking"],
     Match:       ["promising","workable","steady","balanced","real shot","doable","potential","growing","explore","on track","worth it","solid chance"],
@@ -433,123 +420,102 @@
     Unrealistic: ["It’s okay to pass—save energy for better fits.","Wish them well and keep your bar where it belongs.","No need to force a vibe that isn’t there."]
   };
 
-  const WORDS_SEX = {
-    Likely:      ["spark","heat","electric","magnetic","pull","chemistry","instant","charged","locked-in","fire","clicking","tight vibe"],
-    Match:       ["flirty","promising","playful","easy","casual","fun","good tempo","light","open","tease","curious","game on"],
-    Challenging: ["stop-start","mixed signals","logistics","timing","effort","fizzle risk","awkward","uneven","off tempo","hesitant","stall","cold-hot"],
-    Unrealistic: ["low spark","no pull","flat","forced","dry","off chemistry","cold","no click","different pace","out of sync","hard to start","stuck"]
-  };
-  const TPL_SEX = {
-    Likely: [
-      "The {w1} is instant—energy feels {w2}.",
-      "Strong {w1}; the pull is {w2}.",
-      "{w1} and {w2}—no overthinking needed.",
-      "It’s {w1} from the jump, with a {w2} vibe.",
-      "You’re locked into that {w1}; everything feels {w2}."
-    ],
-    Match: [
-      "Feels {w1}; keep it {w2} and see where it goes.",
-      "A {w1} setup with {w2} momentum.",
-      "{w1} energy—light, {w2}, and easy to explore.",
-      "This is {w1}; pace it {w2}.",
-      "Play it {w1}; the tempo is {w2}."
-    ],
-    Challenging: [
-      "Expect {w1}; the tempo could be {w2}.",
-      "Attraction pops but {w1} make it {w2}.",
-      "There’s {w1} here—keep plans simple or it turns {w2}.",
-      "It feels {w1}; chemistry may go {w2}.",
-      "{w1} signs—watch for a {w2} rhythm."
-    ],
-    Unrealistic: [
-      "It’s {w1}; chemistry stays {w2}.",
-      "{w1} read overall—vibe is {w2}.",
-      "Feels {w1}; likely {w2} if you push it.",
-      "The match is {w1}; momentum stays {w2}.",
-      "Overall {w1}—connection is {w2}."
-    ]
-  };
-  const WHY_SEX = {
-    Likely:      ["Follow the spark—keep logistics light and fun.","Short plans, strong pull; let the vibe lead.","Ride the momentum; don’t over-script."],
-    Match:       ["Keep it playful and low-friction.","Simple plans, clear boundaries—easy wins.","Match the tempo; let curiosity do the work."],
-    Challenging: ["Trim logistics; keep meets short and simple.","If it stalls, reset pace or pass.","Don’t chase mixed signals—protect your energy."],
-    Unrealistic: ["No need to force it—save the effort.","If it’s flat, move on quickly.","Close the tab and look for real spark."]
-  };
-
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-  function humanize(band, intent){
-    const WORDS = intent==="Sex" ? WORDS_SEX : WORDS_LOVE;
-    const TPL   = intent==="Sex" ? TPL_SEX   : TPL_LOVE;
-    const words = WORDS[band];
-    const tpl   = pick(TPL[band]);
+  function humanize(band){
+    const words = WORDS_LOVE[band];
+    const tpl   = pick(TPL_LOVE[band]);
     let w1 = pick(words), w2 = pick(words);
     for(let i=0;i<4 && w2===w1;i++) w2 = pick(words);
     const sentence = tpl.replace("{w1}", w1).replace("{w2}", w2);
     return sentence.charAt(0).toUpperCase() + sentence.slice(1);
   }
-  function whyLine(band, intent){
-    const WHY = intent==="Sex" ? WHY_SEX : WHY_LOVE;
-    return pick(WHY[band]);
+  function whyLine(band){ return pick(WHY_LOVE[band]); }
+
+  function renderAdvice(band){
+    const a = humanize(band);
+    const b = whyLine(band);
+    const wrap = document.getElementById("adviceWrap");
+    wrap.innerHTML = ""; // clear
+    wrap.innerHTML = `<p style="margin:0">${a}</p><p style="margin:8px 0 0 0">${b}</p>`;
   }
 
-  // advice renderer (no buttons)
-  function renderAdvice(band, intent){
-    const a = humanize(band, intent);
-    const b = whyLine(band, intent);
-    document.getElementById("adviceWrap").innerHTML =
-      `<p style="margin:0">${a}</p><p style="margin:8px 0 0 0">${b}</p>`;
-  }
-
-  // ---------- wire ----------
+  // ---------- Calculate (single binding + duplicate guard) ----------
   const calcBtn = document.getElementById("calcBtn");
-  const modeLoveBtn = document.getElementById("modeLove");
-  const modeSexBtn  = document.getElementById("modeSex");
-  let currentIntent = "Love";
+  calcBtn.onclick = async function handleCalculate(e){
+    const btn = e.currentTarget;
+    if (btn.dataset.busy === "1") return; // guard double-clicks
+    btn.dataset.busy = "1";
+    btn.disabled = true;
 
-  modeLoveBtn.addEventListener("click", ()=>{
-    currentIntent = "Love";
-    modeLoveBtn.classList.add("active"); modeLoveBtn.setAttribute("aria-selected","true");
-    modeSexBtn.classList.remove("active"); modeSexBtn.setAttribute("aria-selected","false");
-  });
-  modeSexBtn.addEventListener("click", ()=>{
-    currentIntent = "Sex";
-    modeSexBtn.classList.add("active"); modeSexBtn.setAttribute("aria-selected","true");
-    modeLoveBtn.classList.remove("active"); modeLoveBtn.setAttribute("aria-selected","false");
-  });
-
-  calcBtn.addEventListener("click", ()=>{
-    const me   = readPerson("");
-    const them = readPerson("p");
-
-    if(!(me.age>=18 && me.age<=100) || !(them.age>=18 && them.age<=100)){
-      alert("Ages must be 18–100."); return;
-    }
-
-    const res = mutualMatch(me, them, currentIntent);
-    let finalScore = applyContext(res.score, me, them, currentIntent);
-    finalScore = clamp(finalScore, 0, 100);
-    const {band, cls} = labelBand(finalScore);
-
-    // UI header bits
-    document.getElementById("youMeta").textContent =
-      `${me.gender}, ${me.age} • A${me.traits.appearance}/S${me.traits.status}/E${me.traits.empathy}/C${me.traits.confidence}`;
-    document.getElementById("pMeta").textContent =
-      `${them.gender}, ${them.age} • A${them.traits.appearance}/S${them.traits.status}/E${them.traits.empathy}/C${them.traits.confidence}`;
-
+    const resEl = document.getElementById("result");
+    const youMeta = document.getElementById("youMeta");
+    const pMeta   = document.getElementById("pMeta");
     const matchEl = document.getElementById("matchLevel");
-    matchEl.className = "score "+cls;
-    matchEl.textContent = `${finalScore} / 100`;
-    document.getElementById("labelText").textContent = band;
+    const labelEl = document.getElementById("labelText");
+    const copy1   = document.getElementById("humanCopy");
+    const copy2   = document.getElementById("humanCopy2");
+    const advice  = document.getElementById("adviceWrap");
 
-    // Human copy (mode-aware)
-    document.getElementById("humanCopy").textContent = humanize(band, currentIntent);
-    document.getElementById("humanCopy2").textContent = whyLine(band, currentIntent);
+    // Clear previous outputs to avoid duplicates
+    youMeta.textContent = "";
+    pMeta.textContent   = "";
+    matchEl.textContent = "";
+    labelEl.textContent = "";
+    copy1.textContent   = "";
+    copy2.textContent   = "";
+    advice.innerHTML    = "";
 
-    // Advice (no controls)
-    renderAdvice(band, currentIntent);
+    try{
+      const me   = readPerson("");
+      const them = readPerson("p");
 
-    document.getElementById("result").hidden = false;
-  });
+      if(!(me.age>=18 && me.age<=100) || !(them.age>=18 && them.age<=100)){
+        alert("Ages must be 18–100.");
+        return;
+      }
+
+      // LUDACRIS gate
+      if (isLudacris(me, them) || isLudacris(them, me)) {
+        resEl.hidden = false;
+        youMeta.textContent = `${me.gender}, ${me.age} • A${me.traits.appearance}/S${me.traits.status}/E${me.traits.empathy}/C${me.traits.confidence}`;
+        pMeta.textContent   = `${them.gender}, ${them.age} • A${them.traits.appearance}/S${them.traits.status}/E${them.traits.empathy}/C${them.traits.confidence}`;
+        matchEl.className = "score match-unre";
+        matchEl.textContent = "LUDACRIS";
+        labelEl.textContent = "Result withheld. No comments.";
+        copy1.textContent = "Inputs triggered the hard safety gate (extreme age gap or outsized demands).";
+        copy2.textContent = "Adjust ages or expectations and try again.";
+        return;
+      }
+
+      // Normal scoring
+      const res = mutualMatch(me, them);
+      let finalScore = applyContext(res.score, me, them);
+      finalScore = clamp(finalScore, 0, 100);
+      const {band, cls} = labelBand(finalScore);
+
+      // UI header bits
+      youMeta.textContent =
+        `${me.gender}, ${me.age} • A${me.traits.appearance}/S${me.traits.status}/E${me.traits.empathy}/C${me.traits.confidence}`;
+      pMeta.textContent =
+        `${them.gender}, ${them.age} • A${them.traits.appearance}/S${them.traits.status}/E${them.traits.empathy}/C${them.traits.confidence}`;
+
+      matchEl.className = "score "+cls;
+      matchEl.textContent = `${finalScore} / 100`;
+      labelEl.textContent = band;
+
+      // Human copy
+      copy1.textContent = humanize(band);
+      copy2.textContent = whyLine(band);
+
+      // Advice
+      renderAdvice(band);
+
+      resEl.hidden = false;
+    } finally {
+      btn.dataset.busy = "0";
+      btn.disabled = false;
+    }
+  };
 
   // ---------- seed defaults ----------
   (function seed(){
@@ -574,9 +540,6 @@
     document.getElementById("pStatus").value = "6";
     document.getElementById("pEmpathy").value = "6";
     document.getElementById("pConfidence").value = "6";
-
-    // default mode = Love
-    modeLoveBtn.click();
   })();
   </script>
 </body>
