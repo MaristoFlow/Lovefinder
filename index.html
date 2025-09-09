@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Lovefinder — v3.5 Elite (Mobile-Ready)</title>
+  <title>Lovefinder — v3.6 Elite (Reality Check)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Lovefinder Elite — 15-tier compatibility, Age + A,S,E,C, and a premium single-sentence result with dynamic vocabulary.">
+  <meta name="description" content="Lovefinder — Reality Check. The app to see if the love is true or beyond reality. 15-tier compatibility, Age + A,S,E,C, and a single-sentence verdict.">
   <style>
     /* === THEME (Elite) === */
     :root{
@@ -17,6 +17,7 @@
       --chip-bg:rgba(255,255,255,.04); --chip-ink:#cbb9da;
       --cta-ink:#140c16; --cta-shadow:0 12px 30px rgba(255,125,171,.28);
       --ring-track:rgba(255,255,255,.12); --ring-gap:14px;
+      --hero-glow: 0 18px 60px rgba(255,125,171,.30), 0 8px 30px rgba(123,88,227,.25);
     }
     [data-theme="light"]{
       --bg-start:#f8f6fd; --bg-end:#ffffff; --bg-rad1:#efe9ff; --bg-rad2:#ffffff;
@@ -28,6 +29,7 @@
       --chip-bg:#f3f0fb; --chip-ink:#6e6791;
       --cta-ink:#ffffff; --cta-shadow:0 10px 26px rgba(123,88,227,.22);
       --ring-track:rgba(0,0,0,.08);
+      --hero-glow: 0 14px 44px rgba(123,88,227,.25), 0 6px 24px rgba(232,81,143,.22);
     }
 
     *{box-sizing:border-box} html,body{height:100%}
@@ -54,7 +56,7 @@
     @keyframes twinkle{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     .celebrate .sparkle{ opacity:.5 } [data-theme="light"] .celebrate .sparkle{ opacity:.28 }
 
-    header{padding:28px 16px 16px; text-align:center}
+    header{padding:26px 16px 8px; text-align:center}
     .brand{display:flex; align-items:center; justify-content:center; gap:14px;}
     .crest{width:38px; height:38px; border-radius:12px; position:relative; flex:none;
       background:linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.02));
@@ -62,10 +64,40 @@
     .crest::after{content:"LF"; font-weight:900; font-size:.95rem;
       background:linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
       -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:.5px;}
-    header h1{margin:0; font-size:1.9rem; letter-spacing:.25px; line-height:1.15;
+
+    /* === HERO TITLE: Reality Check === */
+    .hero-wrap{margin:6px auto 18px; max-width:980px; padding:0 12px;}
+    .hero-title{
+      margin:0;
+      font-size:clamp(1.9rem, 5vw, 3rem);
+      font-weight:1000; letter-spacing:.6px; line-height:1.05;
+      text-transform:uppercase;
       background:linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
-      -webkit-background-clip:text; background-clip:text; color:transparent;}
-    header p{margin:8px 0 0; color:var(--ink-soft)}
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow:0 1px 0 rgba(0,0,0,.25);
+      filter: drop-shadow(0 2px 0 rgba(0,0,0,.2));
+      position:relative;
+    }
+    .hero-title .strike{
+      display:inline-block;
+      padding:2px 10px 4px;
+      border-radius:12px;
+      background:linear-gradient(100deg, rgba(255,125,171,.18), rgba(183,139,250,.18));
+      box-shadow:var(--hero-glow);
+      border:1px solid var(--line);
+    }
+    .hero-slogan{
+      margin:10px auto 0;
+      font-size:clamp(0.98rem, 2.4vw, 1.2rem);
+      font-weight:800; letter-spacing:.2px;
+      color:var(--ink-soft);
+    }
+    .hero-divider{
+      width:min(560px, 70%); height:2px; margin:14px auto 0; border:0;
+      background:linear-gradient(90deg, transparent, var(--accent), var(--accent-2), var(--accent-3), transparent);
+      box-shadow:var(--hero-glow);
+    }
+
     main{max-width:980px;margin:0 auto;padding:16px;display:grid;gap:18px}
 
     .card{background:var(--card-bg); border:1px solid var(--line); border-radius:20px; padding:18px;
@@ -148,12 +180,11 @@
       .sparkle { opacity: 0.25; }
     }
     @media (max-width: 480px) {
-      header { padding: 20px 12px 10px; }
+      header { padding: 20px 12px 4px; }
       .card { padding: 14px; border-radius: 16px; }
       .num-grid { gap: 6px; grid-template-columns: repeat(5, minmax(44px,1fr)); }
       .gauge { --size: 170px; }
       .gauge .score-big { font-size: 1.8rem; }
-      /* Optional: make Calculate easier to reach */
       .cta-wrap { position: sticky; bottom: 8px; z-index: 5; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -176,10 +207,17 @@
   <header>
     <div class="brand">
       <div class="crest" aria-hidden="true"></div>
-      <div>
-        <h1>Lovefinder — Elite</h1>
-        <p>15-tier compatibility. Age + A,S,E,C. One-line verdict.</p>
-      </div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero-wrap" aria-labelledby="hero-title" aria-describedby="hero-slogan">
+      <h1 id="hero-title" class="hero-title">
+        <span class="strike">Reality Check</span>
+      </h1>
+      <p id="hero-slogan" class="hero-slogan">
+        The app to see if the love is <strong>true</strong> — or <strong>beyond reality</strong>.
+      </p>
+      <div class="hero-divider" aria-hidden="true"></div>
     </div>
   </header>
 
@@ -315,7 +353,7 @@
   </main>
 
   <footer>
-    v3.5 — Mobile-ready (viewport-fit, pointer events, no iOS zoom) + 15 levels, dynamic vocab.
+    v3.6 — Reality Check edition. Mobile-ready + 15 levels + dynamic vocab.
   </footer>
 
   <script>
@@ -436,7 +474,7 @@
   function tierColorClass(t){
     if(t==="Transcendent"||t==="Magnetic"||t==="Likely"||t==="Promising") return "match-likely";
     if(t==="Match"||t==="Workable") return "match-match";
-    if(t==="Mixed"||t==="Challenging"||t==="Fragile") return "match-chal";
+    if(t==="Mixed","Challenging","Fragile".includes(t)) return "match-chal";
     return "match-unre";
   }
 
@@ -458,7 +496,6 @@
     "Null": ["nil","zeroed","voided","nonstarter","dead-end","stone-cold","absent","null-set","vacant-slot","blank-slate","no-signal","blackout","void-null","zero","none"]
   };
 
-  // ---------- One-line templates (use vocab) ----------
   const ONE_LINE = {
     "Transcendent": "It feels {w1} and {w2}—lean in and protect the pace.",
     "Magnetic": "The pull is {w1} and {w2}; momentum is on your side.",
@@ -567,7 +604,6 @@
       matchEl.className="score "+cls; matchEl.textContent=`${finalScore} / 100`;
       labelEl.textContent=tier;
 
-      // One sentence with dynamic vocab for the tier
       const bank = WORD_BANK[tier] || WORD_BANK["Mixed"];
       const [w1,w2]=pick2(bank);
       const tpl = ONE_LINE[tier] || "It’s {w1} and {w2}.";
